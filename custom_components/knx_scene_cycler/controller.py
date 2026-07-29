@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 
+import logging
+
+from homeassistant.components.scene import DOMAIN as SCENE_DOMAIN
+from homeassistant.const import ATTR_ENTITY_ID, SERVICE_TURN_ON
 from homeassistant.core import HomeAssistant
 
 from .models import SceneButtonConfig
 from .runtime import ButtonState, SceneButtonRuntime
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class SceneButtonController:
@@ -32,7 +38,7 @@ class SceneButtonController:
         return self._config
 
     async def activate_scene(self, slot: int) -> None:
-        """Activate one regular scene in the runtime state."""
+        """Activate one configured regular scene."""
         mapping = self._config.mapping_for_slot(slot)
 
         if mapping is None:
@@ -40,11 +46,32 @@ class SceneButtonController:
                 f"No scene mapping configured for slot {slot}."
             )
 
+        await self._activate_homeassistant_scene(
+            mapping.scene_entity_id
+        )
+
         self._runtime.activate_scene(slot)
 
+        _LOGGER.debug(
+            "Activated scene slot %s (%s) for button %s",
+            slot,
+            mapping.scene_entity_id,
+            self._config.button_id,
+        )
+
     async def activate_neutral(self) -> None:
-        """Activate the neutral state in the runtime."""
+        """Activate the configured neutral scene."""
+        await self._activate_homeassistant_scene(
+            self._config.neutral_scene_entity_id
+        )
+
         self._runtime.deactivate()
+
+        _LOGGER.debug(
+            "Activated neutral scene %s for button %s",
+            self._config.neutral_scene_entity_id,
+            self._config.button_id,
+        )
 
     async def toggle(self) -> None:
         """Toggle between neutral and the last active regular scene."""
@@ -70,6 +97,11 @@ class SceneButtonController:
         )
 
         if mapping is None:
+            _LOGGER.debug(
+                "Ignoring unmapped KNX scene number %s for button %s",
+                knx_scene_number,
+                self._config.button_id,
+            )
             return
 
         await self.activate_scene(mapping.slot)
@@ -82,3 +114,22 @@ class SceneButtonController:
     async def shutdown(self) -> None:
         """Release runtime resources."""
         return
+
+    async def _activate_homeassistant_scene(
+        self,
+        scene_entity_id: str,
+    ) -> None:
+        """Activate one Home Assistant scene entity."""
+        _LOGGER.debug(
+            "Calling scene.turn_on for %s",
+            scene_entity_id,
+        )
+
+        await self._hass.services.async_call(
+            SCENE_DOMAIN,
+            SERVICE_TURN_ON,
+            {
+                ATTR_ENTITY_ID: scene_entity_id,
+            },
+            blocking=True,
+        )
