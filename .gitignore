@@ -31,3 +31,6 @@ home-assistant.log
 *.ntvs*
 *.njsproj
 EOF
+
+# Private lokale Deployment-Skripte
+.local/

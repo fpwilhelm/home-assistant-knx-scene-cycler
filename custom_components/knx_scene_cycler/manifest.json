@@ -2,6 +2,7 @@
   "domain": "knx_scene_cycler",
   "name": "KNX Scene Cycler",
   "codeowners": ["@fpwilhelm"],
+  "config_flow": true,
   "dependencies": ["knx"],
   "documentation": "https://github.com",
   "integration_type": "hub",
