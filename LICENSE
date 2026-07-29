@@ -1,4 +1,3 @@
-cat << 'EOF' > LICENSE.md
 MIT License
 
 Copyright (c) 2026 fpwilhelm
@@ -20,15 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-EOF
-
-cat << 'EOF' > TODO.md
-# TODOs - Future Enhancements
-
-Hier sind die geplanten Funktionen für zukünftige Versionen der Integration:
-
-- [ ] **ETS-Projekt-Import (.knxproj):** Automatisches Auslesen der Gruppenadressen aus der KNX-Datenbank für Autocomplete im Config-Flow.
-- [ ] **Erweiterter Options-Flow:** Visuelles Bearbeiten und Löschen bereits bestehender Tasten über die Benutzeroberfläche.
-- [ ] **Unterstützung für Tunable White (TW):** Dynamische Farbtemperatur-Rückmeldung im Dashboard (Kelvin statt RGB), falls Lampen kein Farb-LED unterstützen.
-- [ ] **HACS-Kompatibilität:** Hinzufügen der notwendigen Metadaten, um die Integration über den Home Assistant Community Store installierbar zu machen.
-EOF
