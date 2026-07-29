@@ -59,7 +59,7 @@ class KnxSceneCyclerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_function(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Step 2: Handle adding a specific button/function to the device."""
+        """Step 2: Handle adding the first button to the device."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -111,7 +111,7 @@ class KnxSceneCyclerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class KnxSceneCyclerOptionsFlowHandler(config_entries.OptionsFlow):
-    """Handle options flow to dynamically add/edit multiple buttons later."""
+    """Handle options flow to dynamically add multiple buttons later."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
@@ -120,28 +120,39 @@ class KnxSceneCyclerOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Manage the options menu."""
-        return await self.async_step_add_button()
+        """Intermediate menu to choose an action."""
+        if user_input is not None:
+            if user_input.get("action") == "add":
+                return await self.async_step_add_button()
+            return self.async_create_entry(title="", data={})
+
+        data_schema = vol.Schema(
+            {
+                vol.Required("action", default="add"): vol.In(
+                    {"add": "Neue Taste/Funktion hinzufügen", "finish": "Konfiguration beenden"}
+                )
+            }
+        )
+
+        return self.async_show_form(step_id="init", data_schema=data_schema)
 
     async def async_step_add_button(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Handle adding an extra button via the 'Configure' menu."""
+        """Handle adding the extra button parameters."""
         if user_input is not None:
-            current_options = dict(self.config_entry.options)
+            # WICHTIG: Wir holen uns das originale DATA-Dictionary
+            current_data = dict(self.config_entry.data)
+            old_functions = list(current_data.get("functions", []))
             
-            # Falls noch keine Optionen existieren, nutzen wir die initialen DATA-Funktionen als Basis
-            old_functions = list(current_options.get("functions", self.config_entry.data.get("functions", [])))
-            
-            # Neue Taste anhängen
+            # Neue Taste an die DATA-Struktur anhängen
             old_functions.append(user_input)
-            current_options["functions"] = old_functions
+            current_data["functions"] = old_functions
             
-            # Speichere den Eintrag direkt im Home Assistant System ab
+            # Wir überschreiben direkt das DATA-Feld des Entries. Das ist absolut stabil!
             self.hass.config_entries.async_update_entry(
-                self.config_entry, options=current_options
+                self.config_entry, data=current_data
             )
-            # KORREKTUR: OptionsFlow verlangt data={} bei der Rückgabe
             return self.async_create_entry(title="", data={})
 
         scene_selector = selector.EntitySelector(
