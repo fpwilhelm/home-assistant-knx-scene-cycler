@@ -5,7 +5,6 @@ from typing import Any
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -84,8 +83,9 @@ class KnxSceneCyclerSelect(SelectEntity):
         self._entity_to_name = {v: k for k, v in self._name_to_entity.items()}
         self._attr_current_option = "Szene 1"
 
-        # Entspricht der unique_id des gekoppelten Schalters
-        self._target_switch_unique_id = f"{config_entry.entry_id}_button_{index}"
+        # Absolut sichere, dynamische Ermittlung der Schalter-ID ohne Registry-Absturz
+        suffix = "" if index == 1 else f"_{index}"
+        self._target_switch_entity_id = f"switch.{DOMAIN}_szenenwahl{suffix}"
 
     async def async_added_to_hass(self) -> None:
         """Register HA bus listeners when added to hass."""
@@ -112,14 +112,10 @@ class KnxSceneCyclerSelect(SelectEntity):
             "knx", "send", {"address": self._ga_scene_select, "payload": knx_value}
         )
         
-        # Dynamisches Auflösen der echten Schalter-Entity-ID über die Registry
-        ent_reg = er.async_get(self.hass)
-        switch_entity_id = ent_reg.async_get_entity_id("switch", DOMAIN, self._target_switch_unique_id)
-        
-        if switch_entity_id:
-            await self.hass.services.async_call(
-                "switch", "turn_on", {"entity_id": switch_entity_id}, blocking=False
-            )
+        # Schaltet den zugehörigen Switch synchron an
+        await self.hass.services.async_call(
+            "switch", "turn_on", {"entity_id": self._target_switch_entity_id}, blocking=False
+        )
 
     @callback
     def _async_handle_knx_event(self, event: Any) -> None:

@@ -115,7 +115,6 @@ class KnxSceneCyclerOptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow and pass the entry correctly to the super class."""
-        # KORREKTUR FÜR CORE 2026: Das Entry MUSS zwingend an super() übergeben werden
         super().__init__(config_entry)
 
     async def async_step_init(
@@ -142,19 +141,14 @@ class KnxSceneCyclerOptionsFlowHandler(config_entries.OptionsFlow):
     ) -> FlowResult:
         """Handle adding the extra button parameters."""
         if user_input is not None:
-            # KORREKTUR FÜR CORE 2026: Zugriff erfolgt über self.config_entry
             current_data = dict(self.config_entry.data)
             old_functions = list(current_data.get("functions", []))
             
-            # Neue Taste anhängen
             old_functions.append(user_input)
             current_data["functions"] = old_functions
             
-            # Speicher das DATA-Feld über die offizielle Core-Methode ab
-            self.hass.config_entries.async_update_entry(
-                self.config_entry, data=current_data
-            )
-            return self.async_create_entry(title="", data={})
+            # Offizieller Core 2026 Weg: Wir updaten die Entry-Daten direkt im Flow
+            return self.async_create_entry(title="", data=current_data)
 
         scene_selector = selector.EntitySelector(
             selector.EntitySelectorConfig(domain="scene")
