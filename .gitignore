@@ -1,0 +1,33 @@
+cat << 'EOF' > .gitignore
+# Python (Byte-compiled / Cache)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Python Virtuelle Umgebungen
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Betriebssystem (Mac & Windows)
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+desktop.ini
+
+# Home Assistant Test- & Laufzeitdaten
+.storage/
+*.log
+home-assistant.log
+
+# Editoren (VS Code / JetBrains)
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+EOF
