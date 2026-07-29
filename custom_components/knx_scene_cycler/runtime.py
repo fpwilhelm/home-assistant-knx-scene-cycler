@@ -14,7 +14,6 @@ class ButtonState(StrEnum):
 
     INACTIVE = "inactive"
     ACTIVE = "active"
-    RESTORING = "restoring"
     UNAVAILABLE = "unavailable"
 
 
@@ -50,29 +49,13 @@ class SceneButtonRuntime:
         self.current_scene_slot = None
         self.state = ButtonState.INACTIVE
 
-    def begin_restore(self) -> int:
-        """Enter restoring state and return the scene slot to restore."""
-        self._validate_scene_slot(self.last_active_scene_slot)
-
-        self.current_scene_slot = None
-        self.state = ButtonState.RESTORING
-
-        return self.last_active_scene_slot
-
-    def complete_restore(self) -> None:
-        """Complete restoration of the last active regular scene."""
-        self._validate_scene_slot(self.last_active_scene_slot)
-
-        self.current_scene_slot = self.last_active_scene_slot
-        self.state = ButtonState.ACTIVE
-
     def mark_unavailable(self) -> None:
         """Mark the runtime as unavailable without forgetting scene history."""
         self.current_scene_slot = None
         self.state = ButtonState.UNAVAILABLE
 
     def reset(self) -> None:
-        """Reset volatile state while preserving the configured fallback."""
+        """Reset runtime state to its initial values."""
         self.current_scene_slot = None
         self.last_active_scene_slot = DEFAULT_SCENE_SLOT
         self.state = ButtonState.INACTIVE

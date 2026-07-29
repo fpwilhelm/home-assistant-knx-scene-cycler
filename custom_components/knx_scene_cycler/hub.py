@@ -90,11 +90,6 @@ class KNXSceneCyclerHub:
                 f"Unknown KNX Scene Cycler button ID: {button_id!r}."
             ) from err
 
-    async def async_restore_state(self) -> None:
-        """Restore the runtime state of all button controllers."""
-        for controller in self._controllers.values():
-            await controller.restore_state()
-
     async def async_shutdown(self) -> None:
         """Shut down all button controllers."""
         for controller in self._controllers.values():

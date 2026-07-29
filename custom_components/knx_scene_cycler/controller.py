@@ -9,7 +9,7 @@ from homeassistant.const import ATTR_ENTITY_ID, SERVICE_TURN_ON
 from homeassistant.core import HomeAssistant
 
 from .models import SceneButtonConfig
-from .runtime import ButtonState, SceneButtonRuntime
+from .runtime import SceneButtonRuntime
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -79,13 +79,9 @@ class SceneButtonController:
             await self.activate_neutral()
             return
 
-        slot = self._runtime.begin_restore()
-
-        try:
-            await self.activate_scene(slot)
-        except Exception:
-            self._runtime.deactivate()
-            raise
+        await self.activate_scene(
+            self._runtime.last_active_scene_slot
+        )
 
     async def handle_knx_scene_number(
         self,
@@ -105,11 +101,6 @@ class SceneButtonController:
             return
 
         await self.activate_scene(mapping.slot)
-
-    async def restore_state(self) -> None:
-        """Restore runtime state after Home Assistant startup."""
-        if self._runtime.state is ButtonState.RESTORING:
-            self._runtime.complete_restore()
 
     async def shutdown(self) -> None:
         """Release runtime resources."""
