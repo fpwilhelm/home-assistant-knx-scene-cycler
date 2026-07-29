@@ -128,19 +128,17 @@ class KnxSceneCyclerOptionsFlowHandler(config_entries.OptionsFlow):
     ) -> FlowResult:
         """Handle adding an extra button via the 'Configure' menu."""
         if user_input is not None:
-            # Bestehende Tasten aus dem ConfigEntry herausholen
-            current_data = dict(self.config_entry.data)
-            old_functions = list(current_data.get("functions", []))
+            # Bestehende Tasten aus den vorhandenen OPTIONS (oder den initialen DATA) holen
+            current_options = dict(self.config_entry.options)
+            old_functions = list(current_options.get("functions", self.config_entry.data.get("functions", [])))
             
-            # Neue Taste an die Liste anhängen
+            # Neue Taste anhängen
             old_functions.append(user_input)
-            current_data["functions"] = old_functions
+            current_options["functions"] = old_functions
             
-            # Das Hauptgerät mit der erweiterten Liste aktualisieren
-            self.hass.config_entries.async_update_entry(
-                self.config_entry, data=current_data
-            )
-            return self.async_create_entry(title="", data=current_data)
+            # FEHLER BEHOBEN: Wir übergeben die Daten an 'data=' im create_entry eines OptionsFlows,
+            # was intern in entry.options abgespeichert wird. Das 'data=' im OptionsFlow befüllt 'entry.options'!
+            return self.async_create_entry(title="", data=current_options)
 
         scene_selector = selector.EntitySelector(
             selector.EntitySelectorConfig(domain="scene")

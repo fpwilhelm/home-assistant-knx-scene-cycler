@@ -24,7 +24,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         config_entry_id=entry.entry_id,
         identifiers={(DOMAIN, entry.entry_id)},
         name=device_name,
-        manufacturer="MDT / KNX Custom",
+        manufacturer="F. Wilhelm / Custom",
         model="Universal Scene Controller",
     )
 

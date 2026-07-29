@@ -58,7 +58,6 @@ class KnxSceneCyclerSwitch(SwitchEntity):
         self._entry_id = config_entry.entry_id
         self._index = index
 
-        # Namensänderung auf Wunsch: Kurz und aussagekräftig
         self._attr_name = "Szenenwahl" if index == 1 else f"Szenenwahl {index}"
         self._attr_unique_id = f"{config_entry.entry_id}_button_{index}"
 
