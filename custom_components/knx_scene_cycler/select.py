@@ -2,23 +2,18 @@
 
 from __future__ import annotations
 
-import logging
-
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import Event, HomeAssistant, callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .controller import SceneButtonController
 from .hub import KNXSceneCyclerHub
-
-_LOGGER = logging.getLogger(__name__)
+from .models import SceneMapping
 
 DATA_HUB = "hub"
-
-OPTION_PREFIX = "Scene "
 
 
 async def async_setup_entry(
@@ -46,7 +41,7 @@ async def async_setup_entry(
 
 
 class KnxSceneCyclerSelect(SelectEntity):
-    """Represent the scene selection for one logical KNX button."""
+    """Represent the regular scene selection for one logical KNX button."""
 
     _attr_has_entity_name = True
 
@@ -60,13 +55,13 @@ class KnxSceneCyclerSelect(SelectEntity):
         self._config = controller.config
         self._runtime = controller.runtime
 
-        self._slot_by_option = {
-            self._option_for_slot(mapping.slot): mapping.slot
-            for mapping in self._config.scene_mappings
-        }
-        self._option_by_slot = {
-            slot: option
-            for option, slot in self._slot_by_option.items()
+        regular_mappings = self._config.regular_mappings()
+        self._mapping_by_option = self._build_option_index(
+            regular_mappings
+        )
+        self._option_by_scene_number = {
+            mapping.knx_scene_number: option
+            for option, mapping in self._mapping_by_option.items()
         }
 
         self._attr_name = f"{self._config.name} Scene"
@@ -76,19 +71,13 @@ class KnxSceneCyclerSelect(SelectEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, config_entry.entry_id)},
         )
-        self._attr_options = [
-            self._option_for_slot(mapping.slot)
-            for mapping in sorted(
-                self._config.scene_mappings,
-                key=lambda mapping: mapping.slot,
-            )
-        ]
+        self._attr_options = list(self._mapping_by_option)
 
     @property
     def current_option(self) -> str | None:
-        """Return the currently selected regular scene."""
-        return self._option_by_slot.get(
-            self._runtime.last_active_scene_slot
+        """Return the last selected regular scene."""
+        return self._option_by_scene_number.get(
+            self._runtime.last_regular_scene_number
         )
 
     @property
@@ -97,33 +86,26 @@ class KnxSceneCyclerSelect(SelectEntity):
         return self._runtime.is_available
 
     async def async_added_to_hass(self) -> None:
-        """Register the KNX event listener."""
+        """Register the runtime listener."""
         await super().async_added_to_hass()
-
         self.async_on_remove(
-            self.hass.bus.async_listen(
-                "knx_event",
-                self._async_handle_knx_event,
+            self._runtime.add_listener(
+                self._async_handle_runtime_update
             )
         )
 
     async def async_select_option(self, option: str) -> None:
-        """Activate the selected scene."""
-        slot = self._slot_by_option.get(option)
+        """Activate and transmit the selected regular scene."""
+        mapping = self._mapping_by_option.get(option)
 
-        if slot is None:
+        if mapping is None:
             raise ValueError(
                 f"Unsupported scene option: {option!r}."
             )
 
-        mapping = self._config.mapping_for_slot(slot)
-
-        if mapping is None:
-            raise ValueError(
-                f"No scene mapping configured for slot {slot}."
-            )
-
-        await self._controller.activate_scene(slot)
+        await self._controller.activate_scene_number(
+            mapping.knx_scene_number
+        )
 
         await self.hass.services.async_call(
             "knx",
@@ -135,54 +117,33 @@ class KnxSceneCyclerSelect(SelectEntity):
             blocking=True,
         )
 
-        self.async_write_ha_state()
-
     @callback
-    def _async_handle_knx_event(
-        self,
-        event: Event,
-    ) -> None:
-        """Update the select state after a KNX scene telegram."""
-        destination = event.data.get("destination")
-
-        if destination != self._config.scene_selection_address:
-            return
-
-        knx_scene_number = self._extract_integer_value(event)
-
-        if knx_scene_number is None:
-            return
-
-        mapping = self._config.mapping_for_knx_scene_number(
-            knx_scene_number
-        )
-
-        if mapping is None:
-            _LOGGER.debug(
-                "Ignoring unmapped KNX scene number %s for button %s",
-                knx_scene_number,
-                self._config.button_id,
-            )
-            return
-
+    def _async_handle_runtime_update(self) -> None:
+        """Write entity state after a runtime change."""
         self.async_write_ha_state()
 
     @staticmethod
-    def _option_for_slot(slot: int) -> str:
-        """Return the select option for a regular scene slot."""
-        return f"{OPTION_PREFIX}{slot}"
+    def _build_option_index(
+        mappings: tuple[SceneMapping, ...],
+    ) -> dict[str, SceneMapping]:
+        """Build unique select options while preserving mapping order."""
+        options: dict[str, SceneMapping] = {}
 
-    @staticmethod
-    def _extract_integer_value(
-        event: Event,
-    ) -> int | None:
-        """Extract an integer value from a KNX event."""
-        raw_value = event.data.get("value")
+        for mapping in mappings:
+            option = mapping.name
 
-        if raw_value is None:
-            raw_value = event.data.get("data")
+            if option in options:
+                option = (
+                    f"{mapping.name} "
+                    f"(KNX {mapping.knx_scene_number})"
+                )
 
-        try:
-            return int(raw_value)
-        except (TypeError, ValueError):
-            return None
+            if option in options:
+                raise ValueError(
+                    "Scene mapping names and KNX scene numbers must "
+                    "produce unique select options."
+                )
+
+            options[option] = mapping
+
+        return options
