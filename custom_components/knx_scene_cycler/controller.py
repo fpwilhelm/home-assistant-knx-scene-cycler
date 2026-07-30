@@ -70,16 +70,29 @@ class SceneButtonController:
 
     async def activate_neutral(self) -> None:
         """Activate the configured neutral scene."""
-        mapping = self._neutral_mapping()
+        mapping = self._config.neutral_mapping()
 
-        await self._activate_mapping(mapping)
-        self._runtime.deactivate(mapping.knx_scene_number)
+        if mapping is not None:
+            await self._activate_mapping(mapping)
+            self._runtime.deactivate(mapping.knx_scene_number)
+
+            _LOGGER.debug(
+                "Activated neutral scene %s (%s, %s) for button %s",
+                mapping.knx_scene_number,
+                mapping.name,
+                mapping.scene_entity_id,
+                self._config.button_id,
+            )
+            return
+
+        await self._activate_homeassistant_scene(
+            self._config.neutral_scene_entity_id
+        )
+        self._runtime.deactivate()
 
         _LOGGER.debug(
-            "Activated neutral scene %s (%s, %s) for button %s",
-            mapping.knx_scene_number,
-            mapping.name,
-            mapping.scene_entity_id,
+            "Activated legacy neutral scene %s for button %s",
+            self._config.neutral_scene_entity_id,
             self._config.button_id,
         )
 
@@ -135,18 +148,6 @@ class SceneButtonController:
 
         return mapping
 
-    def _neutral_mapping(self) -> SceneMapping:
-        """Return the configured neutral mapping."""
-        mapping = self._config.neutral_mapping()
-
-        if mapping is None:
-            raise ValueError(
-                f"Button {self._config.button_id} has no neutral "
-                "scene mapping."
-            )
-
-        return mapping
-
     async def _activate_mapping(
         self,
         mapping: SceneMapping,
@@ -158,11 +159,20 @@ class SceneButtonController:
             mapping.scene_entity_id,
         )
 
+        await self._activate_homeassistant_scene(
+            mapping.scene_entity_id
+        )
+
+    async def _activate_homeassistant_scene(
+        self,
+        scene_entity_id: str,
+    ) -> None:
+        """Activate one Home Assistant scene entity."""
         await self._hass.services.async_call(
             SCENE_DOMAIN,
             SERVICE_TURN_ON,
             {
-                ATTR_ENTITY_ID: mapping.scene_entity_id,
+                ATTR_ENTITY_ID: scene_entity_id,
             },
             blocking=True,
         )
