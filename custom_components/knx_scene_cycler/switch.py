@@ -83,9 +83,14 @@ class KnxSceneCyclerSwitch(SwitchEntity):
         return self._runtime.is_available
 
     async def async_added_to_hass(self) -> None:
-        """Register the KNX event listener."""
+        """Register runtime and KNX event listeners."""
         await super().async_added_to_hass()
 
+        self.async_on_remove(
+            self._runtime.add_listener(
+                self._async_handle_runtime_update
+            )
+        )
         self.async_on_remove(
             self.hass.bus.async_listen(
                 "knx_event",
@@ -95,18 +100,23 @@ class KnxSceneCyclerSwitch(SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Restore the last active regular scene."""
-        await self._controller.activate_scene(
-            self._runtime.last_active_scene_slot
+        await self._controller.activate_scene_number(
+            self._runtime.last_regular_scene_number
         )
-        await self._async_send_status_led(is_active=True)
-
-        self.async_write_ha_state()
+        await self._async_send_status_led(
+            is_active=self._runtime.is_active
+        )
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Activate the configured neutral scene."""
         await self._controller.activate_neutral()
-        await self._async_send_status_led(is_active=False)
+        await self._async_send_status_led(
+            is_active=self._runtime.is_active
+        )
 
+    @callback
+    def _async_handle_runtime_update(self) -> None:
+        """Write entity state after a runtime change."""
         self.async_write_ha_state()
 
     @callback
@@ -118,15 +128,13 @@ class KnxSceneCyclerSwitch(SwitchEntity):
         destination = event.data.get("destination")
 
         if destination == self._config.scene_selection_address:
-            knx_scene_number = self._extract_integer_value(event)
+            scene_number = self._extract_integer_value(event)
 
-            if knx_scene_number is None:
+            if scene_number is None:
                 return
 
             self.hass.async_create_task(
-                self._async_handle_scene_selection(
-                    knx_scene_number
-                ),
+                self._async_handle_scene_selection(scene_number),
                 f"KNX scene selection for {self._config.button_id}",
             )
             return
@@ -146,27 +154,25 @@ class KnxSceneCyclerSwitch(SwitchEntity):
 
     async def _async_handle_scene_selection(
         self,
-        knx_scene_number: int,
+        scene_number: int,
     ) -> None:
-        """Activate a scene received through KNX."""
+        """Activate a mapped scene received through KNX."""
         mapping = self._config.mapping_for_knx_scene_number(
-            knx_scene_number
+            scene_number
         )
 
         if mapping is None:
             _LOGGER.debug(
                 "Ignoring unmapped KNX scene number %s for button %s",
-                knx_scene_number,
+                scene_number,
                 self._config.button_id,
             )
             return
 
-        await self._controller.handle_knx_scene_number(
-            knx_scene_number
+        await self._controller.handle_knx_scene_number(scene_number)
+        await self._async_send_status_led(
+            is_active=self._runtime.is_active
         )
-        await self._async_send_status_led(is_active=True)
-
-        self.async_write_ha_state()
 
     async def _async_handle_toggle(self) -> None:
         """Handle a KNX toggle impulse."""
@@ -174,8 +180,6 @@ class KnxSceneCyclerSwitch(SwitchEntity):
         await self._async_send_status_led(
             is_active=self._runtime.is_active
         )
-
-        self.async_write_ha_state()
 
     async def _async_send_status_led(
         self,
