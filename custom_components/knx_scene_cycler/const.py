@@ -37,9 +37,13 @@ CONF_STATUS_LED_ADDRESS: Final = "status_led_address"
 # ---------------------------------------------------------------------------
 
 CONF_SCENE_MAPPINGS: Final = "scene_mappings"
+CONF_MAPPING_ID: Final = "mapping_id"
+CONF_MAPPING_NAME: Final = "mapping_name"
 CONF_SCENE_SLOT: Final = "scene_slot"
 CONF_KNX_SCENE_NUMBER: Final = "knx_scene_number"
 CONF_SCENE_ENTITY_ID: Final = "scene_entity_id"
+CONF_LED_COLOR_VALUE: Final = "led_color_value"
+CONF_IS_NEUTRAL: Final = "is_neutral"
 CONF_NEUTRAL_SCENE_ENTITY_ID: Final = "neutral_scene_entity_id"
 
 
@@ -77,6 +81,17 @@ DEFAULT_SCENE_SLOT: Final = SCENE_SLOT_1
 # Scene numbers supported by DPT 17.001 in the integration UI.
 MIN_KNX_SCENE_NUMBER: Final = 1
 MAX_KNX_SCENE_NUMBER: Final = 64
+
+# A physical KNX scene object can address up to 64 scenes.
+MAX_SCENE_MAPPINGS_PER_BUTTON: Final = 64
+REQUIRED_REGULAR_SCENE_MAPPINGS: Final = 4
+REQUIRED_NEUTRAL_SCENE_MAPPINGS: Final = 1
+
+# DPT 5.005 LED color values. The actual color assignment is device-specific.
+MIN_LED_COLOR_VALUE: Final = 0
+MAX_LED_COLOR_VALUE: Final = 255
+DEFAULT_LED_COLOR_VALUE: Final = 1
+DEFAULT_NEUTRAL_LED_COLOR_VALUE: Final = 0
 
 # The MDT long-press object sends 0 as a toggle impulse.
 KNX_TOGGLE_VALUE: Final = 0
