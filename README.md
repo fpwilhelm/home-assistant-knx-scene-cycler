@@ -1,157 +1,158 @@
-# KNX Scene Cycler for Home Assistant
+# KNX Scene Cycler
 
-> [!WARNING]
-> **Early Development**
+*A configurable mapping layer for Home Assistant scenes using existing KNX scene buttons.*
+
+> [!NOTE]
+> **Current Status**
 >
-> KNX Scene Cycler is currently under active development.
+> **Version:** v0.2.0
 >
-> The original proof-of-concept is being refactored into a scalable multi-button architecture. Until this work is completed, interfaces, configuration and internal implementation may change.
-
-## Overview
-
-KNX Scene Cycler is a custom Home Assistant integration that connects KNX scene buttons with Home Assistant scenes.
-
-Instead of implementing automation logic inside ETS, the integration allows KNX buttons to control Home Assistant scenes while maintaining a clean separation between KNX communication, runtime state and business logic.
-
-The long-term goal is to support multiple independent KNX scene buttons within a single integration instance.
+> **Architecture Refactoring Complete**
+>
+> The new Scene Mapping architecture is complete and serves as the foundation for future development.
+>
+> Current development focuses on feature completion, testing and documentation.
 
 ---
 
-## Planned Features
+# Why this project exists
 
+Many KNX installations already use high-quality wall-mounted push-buttons for scene control.
+
+This project originated from a real-world installation using numerous **MDT Glass Push-button II Smart** devices.
+
+As Home Assistant became more capable, the number of automations and scenes continued to grow. Reassigning KNX buttons in ETS whenever a Home Assistant scene changed quickly became cumbersome.
+
+KNX Scene Cycler introduces a configurable **Scene Mapping Layer** between KNX and Home Assistant.
+
+Once a KNX button has been configured in ETS to send scene numbers, all scene mapping is managed in Home Assistant. No further ETS changes are required.
+
+The KNX installation remains stable while Home Assistant scenes can evolve independently.
+
+---
+
+# What is a Scene Mapping Layer?
+
+Instead of assigning Home Assistant scenes directly inside the ETS project, KNX Scene Cycler acts as a configurable mapping layer between KNX scene numbers and Home Assistant scenes.
+
+```text
+ETS Project
+      │
+      ▼
+ KNX Scene Number
+      │
+      ▼
+KNX Scene Cycler
+(Scene Mapping Layer)
+      │
+      ▼
+Home Assistant Scene
+```
+
+This approach separates the stable KNX installation from the more dynamic Home Assistant environment.
+
+Changing, replacing or extending Home Assistant scenes no longer requires modifications to the ETS project.
+
+---
+
+# Features
+
+Current functionality includes:
+
+- Configurable mapping between KNX scene numbers and Home Assistant scenes
 - Multiple independent KNX scene buttons
-- Four configurable Home Assistant scenes per button
-- Dedicated neutral scene
-- Short press scene selection
-- Long press toggle (neutral ↔ last active scene)
+- Scene cycling with configurable neutral state
+- Return to the previously active scene
 - Optional KNX status LED feedback
-- Home Assistant Switch entity
+- Home Assistant Config Flow
 - Home Assistant Select entity
-- Runtime state restoration
-- Modern Config Flow
+- Home Assistant Switch entity
+- Runtime state management
 - Scalable multi-button architecture
 
 ---
 
-## Architecture
+# Reference Installation
 
-The integration follows a layered architecture.
+The current reference implementation is developed and tested using:
 
-```text
-Config Entry
-      │
-      ▼
-SceneButtonConfig
-      │
-      ▼
-KNXSceneCyclerHub
-      │
-      ├── SceneButtonController
-      │         │
-      │         ▼
-      │   SceneButtonRuntime
-      │
-      └── additional button controllers
-```
+- MDT Glass Push-button II Smart
+- KNX
+- Home Assistant
 
-Design goals:
-
-- clear separation of responsibilities
-- scalable architecture
-- maintainable codebase
-- predictable runtime behaviour
-- Home Assistant best practices
-
-Business logic is implemented exclusively inside the controller layer.
+Support for additional KNX devices is expected where compatible scene telegrams are available, but has not yet been verified.
 
 ---
 
-## Current Development Status
+# Architecture
 
-### Completed
+The integration follows a modular architecture consisting of independent components:
 
-- Architecture design
-- Typed configuration models
-- Runtime model
-- Controller layer
-- Multi-button hub
-- Project documentation
+- Config Flow
+- Hub
+- Controller
+- Runtime
+- Scene Mapping Model
 
-### In Progress
+This separation keeps KNX communication, runtime state and business logic independent while providing a scalable foundation for future extensions.
 
-- Home Assistant integration migration
-- Multi-button runtime integration
-- Platform migration
-- KNX event routing
-
-### Planned
-
-- Config Flow redesign
-- Runtime restoration
-- Automated tests
-- Documentation expansion
-- First public beta
+Further architectural details are available in the documentation.
 
 ---
 
-## Documentation
+# Documentation
 
 Additional documentation can be found in the `docs` directory.
 
-| Document | Description |
-|----------|-------------|
-| `ARCHITECTURE.md` | Overall software architecture |
-| `DESIGN.md` | Design decisions and architectural principles |
-| `CONTROLLER.md` | Controller responsibilities |
-| `ROADMAP.md` | Planned project milestones |
-| `TODO.md` | Current implementation tasks |
-| `CHANGELOG.md` | Project history |
+## Architecture
+
+- Architecture Overview
+- Config Flow
+- Controller
+- Runtime
+- Scene Mapping
+- Trigger Modes
+
+## Project
+
+- ROADMAP.md
+- TODO.md
+- CHANGELOG.md
 
 ---
 
-## Development Workflow
+# Development Status
 
-Development follows an incremental migration strategy.
+## Completed
 
-Each architectural change is
+- New Scene Mapping architecture
+- Multi-button architecture
+- Runtime model
+- Controller
+- Config Flow
+- Entity platforms
+- Project restructuring
 
-1. implemented,
-2. deployed to Home Assistant,
-3. configuration checked,
-4. tested,
-5. committed,
-6. pushed to GitHub.
+## Currently in Progress
 
-This minimizes regression risk while allowing the architecture to evolve continuously.
-
----
-
-## Repository Structure
-
-```text
-custom_components/
-└── knx_scene_cycler/
-
-docs/
-├── ARCHITECTURE.md
-├── CHANGELOG.md
-├── CONTROLLER.md
-├── DESIGN.md
-├── ROADMAP.md
-└── TODO.md
-```
+- Feature completion
+- Documentation
+- Testing
+- User experience improvements
 
 ---
 
-## Supported Platform
+# Project Vision
 
-- Home Assistant (Custom Integration)
-- KNX
-- Home Assistant Scenes
+KNX Scene Cycler does not replace KNX.
+
+Instead, it extends an existing KNX installation with a flexible mapping layer for Home Assistant scenes while preserving the stability of the ETS project.
+
+The long-term goal is to provide an elegant way to integrate Home Assistant scenes into existing KNX installations without repeatedly modifying the ETS project.
 
 ---
 
-## License
+# License
 
 This project is licensed under the MIT License.
 

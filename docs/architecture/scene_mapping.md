@@ -1,91 +1,145 @@
-# Scene Mapping Architecture
+# Scene Mapping
 
-## Status
+Part of the KNX Scene Cycler Architecture Documentation.
 
-This document describes the target architecture of the KNX Scene Cycler
-integration after the ongoing scene mapping refactoring.
+Related documents:
 
-## Design Goals
+- Architecture Overview
+- Runtime
+- Controller
+- Trigger Modes
 
--   Decouple ETS configuration from Home Assistant scene handling.
--   Support up to 64 KNX scene numbers.
--   Treat regular scene mappings equally.
--   Represent the neutral scene as a normal mapping with
-    `is_neutral = true`.
--   Keep the implementation extensible for future Options Flow support.
+---
 
-## Responsibilities
+# Purpose
 
-### ETS
+Scene Mapping is the central concept of KNX Scene Cycler.
 
-The KNX installer decides which KNX scene numbers are transmitted by the
-push button.
+It defines the relationship between KNX scene numbers and Home Assistant scenes without requiring changes to the ETS project.
 
-### Home Assistant Integration
+Instead of binding KNX scene numbers directly to automation logic, KNX Scene Cycler introduces a configurable mapping layer that can be modified entirely from within Home Assistant.
 
-The integration assigns meaning to each KNX scene number by mapping it
-to:
+---
 
--   Home Assistant scene
--   LED colour value
--   Display name
--   Neutral flag
+# Concept
 
-## SceneMapping
+A Scene Mapping associates a KNX scene number with exactly one Home Assistant scene.
 
-Each configured mapping contains:
+Additionally, it stores all information required for scene activation and optional status LED handling.
 
--   mapping_id
--   name
--   knx_scene_number
--   scene_entity_id
--   led_color_value
--   is_neutral
+The Scene Mapping itself is static configuration.
 
-Exactly one mapping must be marked as neutral.
+It never contains runtime information.
 
-## SceneButtonConfig
+---
 
-A button configuration contains:
+# Responsibilities
 
--   device_name
--   ga_scene_select
--   ga_switch
--   ga_status_led
--   scene_mappings
+A Scene Mapping is responsible for defining:
 
-The configuration also provides a runtime lookup by KNX scene number.
+- KNX scene number
+- Home Assistant scene entity
+- Mapping type
+- Optional LED value
+- User-visible mapping name
 
-## Runtime
+It is **not** responsible for:
 
-Runtime stores:
+- Current active scene
+- Previously active scene
+- Runtime state
+- Trigger processing
+- KNX communication
 
--   current_scene_number
--   last_regular_scene_number
+Those responsibilities belong to the Runtime and Controller.
 
-Slots are retained only temporarily for migration compatibility.
+---
 
-## Controller
+# Mapping Types
 
-Processing flow:
+The current architecture defines two mapping types.
 
-1.  Receive KNX scene number.
-2.  Resolve SceneMapping.
-3.  Activate Home Assistant scene.
-4.  Update runtime.
-5.  Send LED status if configured.
+## Regular Mapping
 
-## Validation
+Represents a normal selectable scene.
 
--   Maximum 64 mappings.
--   At least four regular mappings.
--   Exactly one neutral mapping.
--   Unique mapping IDs.
--   Unique KNX scene numbers.
+Regular mappings are activated directly through KNX scene numbers and can become the current active scene.
 
-## Future Work
+---
 
--   Rewrite controller for scene-number based processing.
--   Remove remaining slot compatibility.
--   Rewrite Config Flow.
--   Implement Options Flow for adding, editing and deleting mappings.
+## Neutral Mapping
+
+Represents the neutral state.
+
+The neutral mapping intentionally has no KNX scene number.
+
+It is activated only through the configured trigger mode and allows temporarily leaving the currently active regular scene while preserving it for later restoration.
+
+---
+
+# Design Principles
+
+The Scene Mapping model follows several design principles.
+
+## Immutable Configuration
+
+Scene mappings represent persistent configuration.
+
+Runtime changes never modify the mapping itself.
+
+---
+
+## Runtime Independence
+
+Runtime information is intentionally stored elsewhere.
+
+This separation keeps configuration stable while runtime changes continuously.
+
+---
+
+## KNX Independence
+
+Scene mappings describe logical relationships.
+
+They do not communicate with the KNX bus directly.
+
+---
+
+## Controller Independence
+
+Scene mappings contain data only.
+
+All business decisions are implemented inside the controller.
+
+---
+
+# Scene Mapping Lifecycle
+
+Scene mappings are created during the Home Assistant configuration process.
+
+Once created they remain unchanged until the user edits the configuration.
+
+During normal operation the controller only reads Scene Mappings.
+
+Runtime information is stored separately.
+
+---
+
+# Future Extensions
+
+The current model was intentionally designed to support future extensions without changing its overall structure.
+
+Possible future enhancements include:
+
+- Additional mapping types
+- Extended LED behaviour
+- Mapping metadata
+- Import and export of mappings
+
+---
+
+# Summary
+
+Scene Mapping is the central configuration model of KNX Scene Cycler.
+
+It separates persistent scene configuration from runtime state and business logic, providing a flexible and scalable foundation for the entire integration.

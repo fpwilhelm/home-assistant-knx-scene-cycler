@@ -1,72 +1,123 @@
-# Runtime Architecture
+# Runtime
 
-## Purpose
+Part of the KNX Scene Cycler Architecture Documentation.
 
-The runtime stores the mutable state of a logical KNX Scene Cycler
-button. It contains only transient information and must never duplicate
-configuration.
+Related documents:
 
-## Responsibilities
+- Architecture Overview
+- Scene Mapping
+- Controller
 
-The runtime is responsible for:
+---
 
--   Current button state
--   Currently active KNX scene number
--   Last active regular KNX scene number
--   Runtime listeners
--   Availability state
+# Purpose
 
-## Button States
+The Runtime represents the current operational state of a configured scene button.
 
-  State         Description
-  ------------- -------------------------------------
-  INACTIVE      Neutral scene is active.
-  ACTIVE        A regular scene is active.
-  UNAVAILABLE   Runtime is temporarily unavailable.
+Unlike the Scene Mapping, which contains persistent configuration, the Runtime stores dynamic information that changes while the integration is running.
 
-## Stored Runtime Values
+The Runtime exists solely to represent the current state of the system.
 
-### current_scene_number
+---
 
-The KNX scene number currently considered active.
+# Responsibilities
 
-### last_regular_scene_number
+The Runtime is responsible for storing:
 
-The last activated regular scene.
+- The currently active Scene Mapping
+- The last active regular Scene Mapping
+- The current button state
 
-This value is intentionally preserved while the neutral scene is active,
-allowing the controller to return to the previous regular scene.
+The Runtime is not responsible for:
 
-## Listener Model
+- Scene configuration
+- Business logic
+- KNX communication
+- Home Assistant service calls
 
-The runtime exposes a listener mechanism.
+Those responsibilities belong to the Controller.
 
-Whenever the runtime changes, all registered listeners are notified.
+---
 
-Typical listeners:
+# Runtime State
 
--   Select entity
--   Switch entity
--   Future diagnostics
+The Runtime changes continuously during operation.
 
-## Migration Strategy
+Typical state changes include:
 
-During the migration from slot-based processing to scene-number
-processing, legacy slot accessors may temporarily remain available as
-compatibility helpers.
+- Activation of a regular scene
+- Activation of the neutral scene
+- Restoration of the previous scene
+- Home Assistant startup
+- Home Assistant shutdown
 
-No new functionality should depend on slot numbers.
+The Runtime always reflects the current operational state.
 
-## Design Principles
+---
 
--   Runtime stores state only.
--   Configuration belongs to SceneButtonConfig.
--   Business logic belongs to the controller.
--   ETS remains responsible for transmitted KNX scene numbers.
--   Runtime never interprets KNX telegrams.
+# Separation from Configuration
 
-## Future Work
+A key design goal of the architecture is the strict separation between configuration and runtime state.
 
--   Remove remaining slot compatibility.
--   Restore runtime state after Home Assistant restart.
--   Support extended diagnostics if required.
+Scene Mappings describe what can happen.
+
+The Runtime describes what is currently happening.
+
+This separation simplifies maintenance and avoids unintended modification of persistent configuration.
+
+---
+
+# Runtime Lifecycle
+
+A Runtime instance is created for every configured scene button.
+
+During operation, the Controller updates the Runtime whenever the operational state changes.
+
+Other components read Runtime information but do not modify it directly.
+
+---
+
+# Design Principles
+
+The Runtime follows several design principles.
+
+## Runtime Only
+
+The Runtime contains no persistent configuration.
+
+---
+
+## Controller Managed
+
+Only the Controller modifies Runtime data.
+
+This guarantees that all state transitions follow the defined business rules.
+
+---
+
+## Lightweight
+
+The Runtime stores only the information required during normal operation.
+
+Configuration data remains inside the Scene Mapping model.
+
+---
+
+# Future Extensions
+
+The Runtime model was intentionally designed to allow future extensions.
+
+Possible additions include:
+
+- Extended runtime diagnostics
+- Timestamp of the last scene activation
+- Activation statistics
+- Additional runtime states
+
+---
+
+# Summary
+
+The Runtime represents the current operational state of a configured scene button.
+
+It intentionally separates dynamic state from persistent configuration and allows the Controller to manage all state transitions consistently.

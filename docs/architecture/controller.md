@@ -1,126 +1,156 @@
-# Controller Architecture
+# Controller
 
-## Purpose
+Part of the KNX Scene Cycler Architecture Documentation.
 
-The controller contains the complete business logic of the KNX Scene
-Cycler. It translates KNX telegrams into Home Assistant actions while
-updating the runtime.
+Related documents:
 
-The controller is the only component that interprets KNX scene numbers.
+- Architecture Overview
+- Scene Mapping
+- Runtime
+- Config Flow
 
-## Responsibilities
+---
 
-The controller shall:
+# Purpose
 
--   Receive KNX telegrams
--   Resolve KNX scene numbers
--   Activate Home Assistant scenes
--   Handle neutral scene switching
--   Update runtime
--   Trigger LED updates
--   Notify entities through the runtime
+The Controller contains the complete business logic of KNX Scene Cycler.
 
-Configuration, runtime storage and UI entities must not duplicate this
-logic.
+It is the only component responsible for making operational decisions.
 
-------------------------------------------------------------------------
+The Controller processes incoming events, evaluates the configured Scene Mappings and updates the Runtime accordingly.
 
-# Processing Flow
+---
 
-``` text
-KNX Telegram
+# Responsibilities
+
+The Controller is responsible for:
+
+- Processing KNX events
+- Evaluating trigger modes
+- Selecting the appropriate Scene Mapping
+- Activating Home Assistant scenes
+- Updating the Runtime
+- Coordinating optional status LED updates
+
+The Controller is not responsible for:
+
+- Persistent configuration
+- Runtime storage
+- KNX communication infrastructure
+- User configuration
+
+Those responsibilities belong to other components of the architecture.
+
+---
+
+# Event Processing
+
+Every user interaction follows the same logical sequence.
+
+```text
+KNX Event
       │
       ▼
-Scene Number
+Controller
       │
       ▼
-Scene Mapping Lookup
+Evaluate Trigger Mode
       │
       ▼
-SceneMapping
+Select Scene Mapping
       │
-      ├───────────────┐
-      │               │
-      ▼               ▼
-Regular         Neutral
-      │               │
-      ▼               ▼
-Activate HA     Deactivate
-Scene           Runtime
-      │               │
-      └──────┬────────┘
-             ▼
-      Update Runtime
-             ▼
-        Update LED
+      ▼
+Activate Home Assistant Scene
+      │
+      ▼
+Update Runtime
+      │
+      ▼
+Update Status LED (optional)
 ```
 
-## Lookup Strategy
+This sequence guarantees that all operational decisions pass through a single component.
 
-The controller never searches by slot.
+---
 
-The primary lookup is:
+# Business Logic
 
--   KNX scene number → SceneMapping
+The Controller evaluates the current Runtime together with the configured Scene Mappings.
 
-The lookup is built from the configuration and provides constant-time
-access.
+Based on the configured Trigger Mode it decides which Scene Mapping should become active.
 
-## Regular Scene
+The Runtime is updated only after successful scene activation.
 
-For a regular mapping the controller:
+---
 
-1.  Resolves the mapping.
-2.  Activates the configured Home Assistant scene.
-3.  Stores the current scene number.
-4.  Stores the last regular scene number.
-5.  Updates the LED.
+# Runtime Ownership
 
-## Neutral Scene
+The Runtime is owned by the Controller.
 
-For the neutral mapping the controller:
+Other components may read Runtime information but do not modify it directly.
 
-1.  Resolves the mapping.
-2.  Activates the configured neutral Home Assistant scene.
-3.  Marks the runtime inactive.
-4.  Keeps the last regular scene number unchanged.
-5.  Updates the LED.
+This guarantees consistent state transitions throughout the integration.
 
-## Toggle Behaviour
+---
 
-The toggle operation alternates between:
+# Scene Activation
 
--   neutral scene
--   last regular scene
+The Controller activates Home Assistant scenes through the Home Assistant service layer.
 
-The controller never guesses a scene. It always restores the last
-recorded regular KNX scene number.
+The Controller never manipulates Scene Mappings during normal operation.
 
-## Error Handling
+Scene Mappings remain persistent configuration.
 
-The controller should ignore:
+---
 
--   unknown scene numbers
--   duplicate telegrams with no state change
+# Error Handling
 
-Configuration errors should raise explicit exceptions during validation
-rather than at runtime.
+The Controller validates incoming events before processing them.
 
-## Design Principles
+Unexpected or invalid events are ignored without affecting the current Runtime.
 
--   Business logic belongs only to the controller.
--   Runtime stores state only.
--   Config stores configuration only.
--   UI entities present state only.
--   ETS defines transmitted scene numbers.
--   Home Assistant defines the meaning of each scene number.
+Failures during scene activation do not modify the Runtime state.
 
-## Future Extensions
+---
 
-The architecture is designed to support:
+# Design Principles
 
--   up to 64 KNX scene mappings
--   Options Flow editing
--   LED colour extensions
--   additional KNX objects
--   persistent runtime restoration
+The Controller follows several architectural principles.
+
+## Single Responsibility
+
+All business decisions are implemented in one place.
+
+---
+
+## Stateless Logic
+
+Business decisions are derived from the current Runtime and Scene Mappings.
+
+The Controller itself stores no persistent state.
+
+---
+
+## Clear Separation
+
+Configuration, Runtime and business logic remain independent.
+
+---
+
+# Future Extensions
+
+The current Controller architecture allows future enhancements including:
+
+- Additional trigger modes
+- Extended LED behaviour
+- Diagnostics
+- Additional validation
+- Advanced scene activation strategies
+
+---
+
+# Summary
+
+The Controller is the central decision-making component of KNX Scene Cycler.
+
+It coordinates Scene Mappings, Runtime updates and Home Assistant scene activation while keeping business logic separate from configuration and runtime state.

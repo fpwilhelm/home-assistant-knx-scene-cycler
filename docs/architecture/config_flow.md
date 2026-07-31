@@ -1,77 +1,115 @@
-# Configuration Flow Architecture
+# Config Flow
 
-## Purpose
+Part of the KNX Scene Cycler Architecture Documentation.
 
-The Config Flow guides the user through creating a logical KNX Scene
-Cycler button. Its responsibility is to collect configuration only.
-Business logic belongs to the controller.
+Related documents:
 
-## Initial Configuration
+- Architecture Overview
+- Scene Mapping
+- Runtime
+- Controller
+- Trigger Modes
 
-Each button requires:
+---
 
--   Device name
--   KNX scene selection group address
--   KNX switch group address
--   KNX status LED group address
+# Purpose
 
-After the communication objects are configured, the user creates the
-scene mappings.
+The Config Flow provides the user interface for configuring KNX Scene Cycler within Home Assistant.
 
-## Required Scene Mappings
+Its primary responsibility is to collect, validate and persist the configuration required by the integration.
 
-The initial configuration requires:
+The Config Flow creates the persistent configuration from which all runtime components are later initialized.
 
--   At least four regular scene mappings
--   Exactly one neutral scene mapping
+---
 
-Each mapping contains:
+# Responsibilities
 
--   Display name
--   KNX scene number (1--64)
--   Home Assistant scene
--   LED colour value (0--255)
--   Neutral flag
+The Config Flow is responsible for:
 
-## Validation
+- Collecting user configuration
+- Validating configuration data
+- Creating Scene Mappings
+- Storing persistent configuration
+- Supporting configuration updates
 
-The Config Flow validates:
+The Config Flow is not responsible for:
 
--   Unique KNX scene numbers
--   Unique mapping identifiers
--   Exactly one neutral mapping
--   At least four regular mappings
--   Maximum of 64 mappings
--   Valid LED colour range
+- Runtime state
+- Scene activation
+- KNX communication
+- Business logic
 
-## Separation of Responsibilities
+Those responsibilities belong to other architectural components.
 
-### ETS
+---
 
-The ETS project determines which KNX scene numbers are sent by the push
-button.
+# Configuration Model
 
-### Home Assistant
+The user configures one scene button by defining:
 
-The integration assigns a meaning to each configured KNX scene number.
+- Button name
+- Scene selection group address
+- Toggle group address
+- Optional status LED group address
+- Regular Scene Mappings
+- Neutral Scene Mapping
 
-This separation allows ETS programming to change independently from the
-Home Assistant configuration.
+The resulting configuration is stored as persistent Home Assistant Config Entry data.
 
-## Options Flow (Future)
+---
 
-The Options Flow will support:
+# Validation
 
--   Add mapping
--   Edit mapping
--   Remove mapping
--   Reorder mappings
--   Change LED colour values
--   Rename mappings
+Before the configuration is stored, the Config Flow validates:
 
-## Design Principles
+- KNX group address format
+- Home Assistant scene entities
+- Unique KNX scene numbers
+- Required configuration values
 
--   Collect configuration only.
--   Do not contain controller logic.
--   Do not duplicate runtime state.
--   Keep the workflow extensible for future releases.
+Invalid configurations are rejected before becoming part of the persistent configuration.
+
+---
+
+# Configuration Lifecycle
+
+The Config Flow is executed when:
+
+- A new integration is created
+- An existing configuration is modified
+
+After successful validation, the configuration is stored by Home Assistant.
+
+During startup, the integration recreates its internal architecture from this stored configuration.
+
+---
+
+# Relationship to the Architecture
+
+The Config Flow creates the persistent configuration.
+
+The Runtime represents the operational state.
+
+The Controller processes events using the stored configuration together with the current Runtime.
+
+This clear separation keeps configuration independent from system operation.
+
+---
+
+# Future Extensions
+
+The Config Flow architecture allows future enhancements including:
+
+- Editing existing scene buttons
+- Removing scene buttons
+- Improved validation
+- Additional Trigger Modes
+- Migration support for future configuration versions
+
+---
+
+# Summary
+
+The Config Flow provides the entry point for configuring KNX Scene Cycler.
+
+It creates the persistent configuration that serves as the foundation for the Runtime, Controller and Scene Mapping architecture.
