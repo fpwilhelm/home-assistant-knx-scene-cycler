@@ -15,7 +15,6 @@ from .const import (
     DOMAIN,
     KNX_LED_OFF,
     KNX_LED_ON,
-    KNX_TOGGLE_VALUE,
 )
 from .controller import SceneButtonController
 from .hub import KNXSceneCyclerHub
@@ -139,18 +138,11 @@ class KnxSceneCyclerSwitch(SwitchEntity):
             )
             return
 
-        if destination != self._config.toggle_address:
-            return
-
-        toggle_value = self._extract_integer_value(event)
-
-        if toggle_value != KNX_TOGGLE_VALUE:
-            return
-
-        self.hass.async_create_task(
-            self._async_handle_toggle(),
-            f"KNX scene toggle for {self._config.button_id}",
-        )
+        if destination == self._config.toggle_address:
+            self.hass.async_create_task(
+                self._async_handle_toggle(),
+                f"KNX scene toggle for {self._config.button_id}",
+            )
 
     async def _async_handle_scene_selection(
         self,

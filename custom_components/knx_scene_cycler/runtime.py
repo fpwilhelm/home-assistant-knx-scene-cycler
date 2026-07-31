@@ -6,8 +6,11 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-from .const import DEFAULT_SCENE_SLOT, SCENE_SLOTS
-from .models import SceneButtonConfig, SceneMapping
+from .models import (
+    SceneButtonConfig,
+    SceneMapping,
+    SceneMappingType,
+)
 
 RuntimeListener = Callable[[], None]
 
@@ -35,9 +38,9 @@ class SceneButtonRuntime:
     )
 
     def __post_init__(self) -> None:
-        """Initialize scene history from the configured regular mappings."""
+        """Initialize scene history from the first regular mapping."""
         self.last_regular_scene_number = (
-            self._default_regular_mapping().knx_scene_number
+            self._scene_number(self._default_regular_mapping())
         )
 
     @property
@@ -51,32 +54,38 @@ class SceneButtonRuntime:
         return self.state is not ButtonState.UNAVAILABLE
 
     @property
-    def current_scene_slot(self) -> int | None:
-        """Return the legacy slot for the current scene during migration."""
+    def current_mapping(self) -> SceneMapping | None:
+        """Return the mapping for the current KNX scene number."""
         if self.current_scene_number is None:
             return None
 
-        mapping = self.config.mapping_for_knx_scene_number(
+        return self.config.mapping_for_knx_scene_number(
             self.current_scene_number
         )
-        return mapping.slot if mapping is not None else None
 
     @property
-    def last_active_scene_slot(self) -> int:
-        """Return the legacy slot for the last regular scene."""
+    def last_regular_mapping(self) -> SceneMapping:
+        """Return the last activated regular scene mapping."""
         mapping = self.config.mapping_for_knx_scene_number(
             self.last_regular_scene_number
         )
-        if mapping is None or mapping.slot is None:
-            return DEFAULT_SCENE_SLOT
 
-        return mapping.slot
+        if (
+            mapping is None
+            or mapping.mapping_type is not SceneMappingType.REGULAR
+        ):
+            raise RuntimeError(
+                "The stored last regular scene number no longer refers "
+                "to a regular scene mapping."
+            )
+
+        return mapping
 
     def add_listener(
         self,
         listener: RuntimeListener,
     ) -> Callable[[], None]:
-        """Register a runtime state listener."""
+        """Register a runtime-state listener."""
         self._listeners.add(listener)
 
         def remove_listener() -> None:
@@ -86,48 +95,36 @@ class SceneButtonRuntime:
 
     def activate_scene_number(self, scene_number: int) -> None:
         """Mark one configured regular KNX scene number as active."""
-        mapping = self._regular_mapping_for_knx_scene_number(scene_number)
+        mapping = self._regular_mapping_for_knx_scene_number(
+            scene_number
+        )
+        mapped_scene_number = self._scene_number(mapping)
 
-        self.current_scene_number = mapping.knx_scene_number
-        self.last_regular_scene_number = mapping.knx_scene_number
+        self.current_scene_number = mapped_scene_number
+        self.last_regular_scene_number = mapped_scene_number
         self.state = ButtonState.ACTIVE
 
         self._notify_listeners()
 
-    def activate_scene(self, slot: int) -> None:
-        """Activate a regular scene by legacy slot during migration."""
-        self._validate_scene_slot(slot)
-
-        mapping = self.config.mapping_for_slot(slot)
-        if mapping is None:
-            raise ValueError(f"No scene mapping configured for slot {slot}.")
-
-        self.activate_scene_number(mapping.knx_scene_number)
-
     def deactivate(self, scene_number: int | None = None) -> None:
         """Mark the configured neutral scene as active."""
-        neutral_mapping = self.config.neutral_mapping()
+        neutral_mapping = self.config.neutral_mapping
 
-        if scene_number is not None:
-            if (
-                neutral_mapping is None
-                or neutral_mapping.knx_scene_number != scene_number
-            ):
-                raise ValueError(
-                    f"Scene number {scene_number} is not the neutral scene."
-                )
+        if (
+            scene_number is not None
+            and neutral_mapping.knx_scene_number != scene_number
+        ):
+            raise ValueError(
+                f"Scene number {scene_number} is not the neutral scene."
+            )
 
-        self.current_scene_number = (
-            neutral_mapping.knx_scene_number
-            if neutral_mapping is not None
-            else None
-        )
+        self.current_scene_number = neutral_mapping.knx_scene_number
         self.state = ButtonState.INACTIVE
 
         self._notify_listeners()
 
     def mark_unavailable(self) -> None:
-        """Mark the runtime as unavailable without forgetting scene history."""
+        """Mark the runtime unavailable without forgetting scene history."""
         self.current_scene_number = None
         self.state = ButtonState.UNAVAILABLE
 
@@ -137,7 +134,7 @@ class SceneButtonRuntime:
         """Reset runtime state to its initial values."""
         self.current_scene_number = None
         self.last_regular_scene_number = (
-            self._default_regular_mapping().knx_scene_number
+            self._scene_number(self._default_regular_mapping())
         )
         self.state = ButtonState.INACTIVE
 
@@ -145,14 +142,12 @@ class SceneButtonRuntime:
 
     def _default_regular_mapping(self) -> SceneMapping:
         """Return the preferred initial regular scene mapping."""
-        legacy_default = self.config.mapping_for_slot(DEFAULT_SCENE_SLOT)
-        if legacy_default is not None and not legacy_default.is_neutral:
-            return legacy_default
+        regular_mappings = self.config.regular_mappings
 
-        regular_mappings = self.config.regular_mappings()
         if not regular_mappings:
             raise ValueError(
-                f"Button {self.config.button_id} has no regular scene mappings."
+                f"Button {self.config.button_id} has no regular "
+                "scene mappings."
             )
 
         return regular_mappings[0]
@@ -162,15 +157,20 @@ class SceneButtonRuntime:
         scene_number: int,
     ) -> SceneMapping:
         """Return a regular mapping or raise a descriptive error."""
-        mapping = self.config.mapping_for_knx_scene_number(scene_number)
+        mapping = self.config.mapping_for_knx_scene_number(
+            scene_number
+        )
+
         if mapping is None:
             raise ValueError(
-                f"No scene mapping configured for scene number "
+                "No scene mapping configured for KNX scene number "
                 f"{scene_number}."
             )
-        if mapping.is_neutral:
+
+        if mapping.mapping_type is SceneMappingType.NEUTRAL:
             raise ValueError(
-                f"Scene number {scene_number} is configured as neutral."
+                f"KNX scene number {scene_number} is configured "
+                "as neutral."
             )
 
         return mapping
@@ -181,10 +181,12 @@ class SceneButtonRuntime:
             listener()
 
     @staticmethod
-    def _validate_scene_slot(slot: int) -> None:
-        """Raise an error if a legacy scene slot is unsupported."""
-        if slot not in SCENE_SLOTS:
-            raise ValueError(
-                f"Unsupported scene slot {slot}. "
-                f"Expected one of {SCENE_SLOTS}."
+    def _scene_number(mapping: SceneMapping) -> int:
+        """Return the required KNX scene number of a regular mapping."""
+        if mapping.knx_scene_number is None:
+            raise RuntimeError(
+                f"Regular scene mapping {mapping.mapping_id!r} has "
+                "no KNX scene number."
             )
+
+        return mapping.knx_scene_number

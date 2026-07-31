@@ -21,6 +21,7 @@ CONF_HUB_NAME: Final = "hub_name"
 CONF_BUTTONS: Final = "buttons"
 CONF_BUTTON_ID: Final = "button_id"
 CONF_BUTTON_NAME: Final = "button_name"
+CONF_TRIGGER_MODE: Final = "trigger_mode"
 
 
 # ---------------------------------------------------------------------------
@@ -33,18 +34,16 @@ CONF_STATUS_LED_ADDRESS: Final = "status_led_address"
 
 
 # ---------------------------------------------------------------------------
-# Scene configuration
+# Scene mappings
 # ---------------------------------------------------------------------------
 
 CONF_SCENE_MAPPINGS: Final = "scene_mappings"
 CONF_MAPPING_ID: Final = "mapping_id"
 CONF_MAPPING_NAME: Final = "mapping_name"
-CONF_SCENE_SLOT: Final = "scene_slot"
+CONF_MAPPING_TYPE: Final = "mapping_type"
 CONF_KNX_SCENE_NUMBER: Final = "knx_scene_number"
 CONF_SCENE_ENTITY_ID: Final = "scene_entity_id"
 CONF_LED_COLOR_VALUE: Final = "led_color_value"
-CONF_IS_NEUTRAL: Final = "is_neutral"
-CONF_NEUTRAL_SCENE_ENTITY_ID: Final = "neutral_scene_entity_id"
 
 
 # ---------------------------------------------------------------------------
@@ -52,40 +51,28 @@ CONF_NEUTRAL_SCENE_ENTITY_ID: Final = "neutral_scene_entity_id"
 # ---------------------------------------------------------------------------
 
 ATTR_ACTIVE: Final = "active"
-ATTR_LAST_ACTIVE_SCENE_SLOT: Final = "last_active_scene_slot"
+ATTR_ACTIVE_KNX_SCENE_NUMBER: Final = "active_knx_scene_number"
+ATTR_LAST_REGULAR_SCENE_NUMBER: Final = "last_regular_scene_number"
 
 
 # ---------------------------------------------------------------------------
-# Scene slots
+# KNX scene limits
 # ---------------------------------------------------------------------------
 
-SCENE_SLOT_1: Final = 1
-SCENE_SLOT_2: Final = 2
-SCENE_SLOT_3: Final = 3
-SCENE_SLOT_4: Final = 4
-
-SCENE_SLOTS: Final = (
-    SCENE_SLOT_1,
-    SCENE_SLOT_2,
-    SCENE_SLOT_3,
-    SCENE_SLOT_4,
-)
-
-DEFAULT_SCENE_SLOT: Final = SCENE_SLOT_1
-
-
-# ---------------------------------------------------------------------------
-# KNX values
-# ---------------------------------------------------------------------------
-
-# Scene numbers supported by DPT 17.001 in the integration UI.
+# Home Assistant exposes DPT 17.001 scene numbers as 1..64.
+# The raw KNX payload remains 0..63 and is not used by this integration.
 MIN_KNX_SCENE_NUMBER: Final = 1
 MAX_KNX_SCENE_NUMBER: Final = 64
 
-# A physical KNX scene object can address up to 64 scenes.
-MAX_SCENE_MAPPINGS_PER_BUTTON: Final = 64
-REQUIRED_REGULAR_SCENE_MAPPINGS: Final = 4
-REQUIRED_NEUTRAL_SCENE_MAPPINGS: Final = 1
+MIN_REGULAR_SCENE_MAPPINGS: Final = 4
+MAX_REGULAR_SCENE_MAPPINGS: Final = 64
+
+DEFAULT_NEUTRAL_KNX_SCENE_NUMBER: Final = 1
+
+
+# ---------------------------------------------------------------------------
+# KNX LED values
+# ---------------------------------------------------------------------------
 
 # DPT 5.005 LED color values. The actual color assignment is device-specific.
 MIN_LED_COLOR_VALUE: Final = 0
@@ -93,10 +80,7 @@ MAX_LED_COLOR_VALUE: Final = 255
 DEFAULT_LED_COLOR_VALUE: Final = 1
 DEFAULT_NEUTRAL_LED_COLOR_VALUE: Final = 0
 
-# The MDT long-press object sends 0 as a toggle impulse.
-KNX_TOGGLE_VALUE: Final = 0
-
-# Status LED payloads.
+# DPT 1.001 status LED payloads.
 KNX_LED_OFF: Final = 0
 KNX_LED_ON: Final = 1
 
@@ -105,34 +89,7 @@ KNX_LED_ON: Final = 1
 # Config entry versions
 # ---------------------------------------------------------------------------
 
-CONFIG_ENTRY_VERSION: Final = 2
-CONFIG_ENTRY_MINOR_VERSION: Final = 1
-
-
-# ---------------------------------------------------------------------------
-# Legacy prototype constants
-#
-# These constants are still used by the existing prototype implementation.
-# They remain available during the refactor so the integration continues to
-# load while config_flow.py, switch.py and select.py are migrated.
-#
-# Remove them only after the complete codebase has been converted to the new
-# configuration model and an appropriate config-entry migration exists.
-# ---------------------------------------------------------------------------
-
-CONF_DEVICE_NAME: Final = "device_name"
-
-CONF_GA_SCENE_SELECT: Final = "ga_scene_select"
-CONF_GA_SWITCH: Final = "ga_switch"
-CONF_GA_STATUS_LED: Final = "ga_status_led"
-
-CONF_SCENE_1: Final = "scene_1"
-CONF_SCENE_2: Final = "scene_2"
-CONF_SCENE_3: Final = "scene_3"
-CONF_SCENE_4: Final = "scene_4"
-CONF_SCENE_5_NEUTRAL: Final = "scene_5_neutral"
-
-CONF_KNX_NUM_1: Final = "knx_num_1"
-CONF_KNX_NUM_2: Final = "knx_num_2"
-CONF_KNX_NUM_3: Final = "knx_num_3"
-CONF_KNX_NUM_4: Final = "knx_num_4"
+# Version 3 introduces trigger modes and the SceneMapping-only configuration
+# model. Existing prototype entries are intentionally not migrated.
+CONFIG_ENTRY_VERSION: Final = 3
+CONFIG_ENTRY_MINOR_VERSION: Final = 0

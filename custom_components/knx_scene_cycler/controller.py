@@ -8,7 +8,11 @@ from homeassistant.components.scene import DOMAIN as SCENE_DOMAIN
 from homeassistant.const import ATTR_ENTITY_ID, SERVICE_TURN_ON
 from homeassistant.core import HomeAssistant
 
-from .models import SceneButtonConfig, SceneMapping
+from .models import (
+    SceneButtonConfig,
+    SceneMapping,
+    SceneMappingType,
+)
 from .runtime import SceneButtonRuntime
 
 _LOGGER = logging.getLogger(__name__)
@@ -39,60 +43,44 @@ class SceneButtonController:
 
     async def activate_scene_number(self, scene_number: int) -> None:
         """Activate one configured regular scene by KNX scene number."""
-        mapping = self._mapping_for_scene_number(scene_number)
+        mapping = self._config.mapping_for_knx_scene_number(
+            scene_number
+        )
 
-        if mapping.is_neutral:
+        if mapping is None:
+            raise ValueError(
+                "No scene mapping configured for KNX scene number "
+                f"{scene_number}."
+            )
+
+        if mapping.mapping_type is SceneMappingType.NEUTRAL:
             raise ValueError(
                 f"Scene number {scene_number} is configured as neutral."
             )
 
-        await self._activate_mapping(mapping)
-        self._runtime.activate_scene_number(mapping.knx_scene_number)
+        await self._activate_scene(mapping)
+        self._runtime.activate_scene_number(scene_number)
 
         _LOGGER.debug(
             "Activated regular scene %s (%s, %s) for button %s",
-            mapping.knx_scene_number,
+            scene_number,
             mapping.name,
             mapping.scene_entity_id,
             self._config.button_id,
         )
 
-    async def activate_scene(self, slot: int) -> None:
-        """Activate a regular scene by legacy slot during migration."""
-        mapping = self._config.mapping_for_slot(slot)
-
-        if mapping is None:
-            raise ValueError(
-                f"No scene mapping configured for legacy slot {slot}."
-            )
-
-        await self.activate_scene_number(mapping.knx_scene_number)
-
     async def activate_neutral(self) -> None:
         """Activate the configured neutral scene."""
-        mapping = self._config.neutral_mapping()
+        mapping = self._config.neutral_mapping
 
-        if mapping is not None:
-            await self._activate_mapping(mapping)
-            self._runtime.deactivate(mapping.knx_scene_number)
-
-            _LOGGER.debug(
-                "Activated neutral scene %s (%s, %s) for button %s",
-                mapping.knx_scene_number,
-                mapping.name,
-                mapping.scene_entity_id,
-                self._config.button_id,
-            )
-            return
-
-        await self._activate_homeassistant_scene(
-            self._config.neutral_scene_entity_id
-        )
-        self._runtime.deactivate()
+        await self._activate_scene(mapping)
+        self._runtime.deactivate(mapping.knx_scene_number)
 
         _LOGGER.debug(
-            "Activated legacy neutral scene %s for button %s",
-            self._config.neutral_scene_entity_id,
+            "Activated neutral scene %s (%s, %s) for button %s",
+            mapping.knx_scene_number,
+            mapping.name,
+            mapping.scene_entity_id,
             self._config.button_id,
         )
 
@@ -123,36 +111,21 @@ class SceneButtonController:
             )
             return
 
-        if mapping.is_neutral:
+        if mapping.mapping_type is SceneMappingType.NEUTRAL:
             await self.activate_neutral()
             return
 
-        await self.activate_scene_number(mapping.knx_scene_number)
+        await self.activate_scene_number(knx_scene_number)
 
     async def shutdown(self) -> None:
         """Release controller resources."""
         return
 
-    def _mapping_for_scene_number(
-        self,
-        scene_number: int,
-    ) -> SceneMapping:
-        """Return a configured mapping or raise a descriptive error."""
-        mapping = self._config.mapping_for_knx_scene_number(scene_number)
-
-        if mapping is None:
-            raise ValueError(
-                f"No scene mapping configured for KNX scene number "
-                f"{scene_number}."
-            )
-
-        return mapping
-
-    async def _activate_mapping(
+    async def _activate_scene(
         self,
         mapping: SceneMapping,
     ) -> None:
-        """Activate the Home Assistant scene of one mapping."""
+        """Activate the Home Assistant scene referenced by a mapping."""
         _LOGGER.debug(
             "Calling scene.turn_on for mapping %s (%s)",
             mapping.mapping_id,

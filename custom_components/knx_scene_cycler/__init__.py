@@ -10,12 +10,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 
-from .const import (
-    CONF_BUTTONS,
-    CONF_DEVICE_NAME,
-    CONF_HUB_NAME,
-    DOMAIN,
-)
+from .const import CONF_BUTTONS, CONF_HUB_NAME, DOMAIN
 from .hub import KNXSceneCyclerHub
 from .models import SceneButtonConfig
 
@@ -27,7 +22,6 @@ PLATFORMS: tuple[Platform, ...] = (
 )
 
 DATA_HUB = "hub"
-LEGACY_CONF_FUNCTIONS = "functions"
 
 DEFAULT_HUB_NAME = "KNX Scene Cycler"
 
@@ -43,8 +37,8 @@ async def async_setup_entry(
     )
 
     hub_name = _get_hub_name(entry)
-
     button_configs = _get_button_configs(entry)
+
     hub = KNXSceneCyclerHub(
         hass=hass,
         button_configs=button_configs,
@@ -63,11 +57,6 @@ async def async_setup_entry(
     domain_data[entry.entry_id] = {
         DATA_HUB: hub,
         CONF_HUB_NAME: hub_name,
-        CONF_DEVICE_NAME: hub_name,
-        LEGACY_CONF_FUNCTIONS: entry.data.get(
-            LEGACY_CONF_FUNCTIONS,
-            [],
-        ),
     }
 
     try:
@@ -139,13 +128,10 @@ async def async_reload_entry(
 
 
 def _get_hub_name(entry: ConfigEntry) -> str:
-    """Return the configured hub name with legacy fallback."""
+    """Return the configured hub name."""
     raw_name = entry.data.get(
         CONF_HUB_NAME,
-        entry.data.get(
-            CONF_DEVICE_NAME,
-            DEFAULT_HUB_NAME,
-        ),
+        DEFAULT_HUB_NAME,
     )
 
     hub_name = str(raw_name).strip()
