@@ -1,6 +1,6 @@
-"""Platform for select integration."""
-import logging
-from typing import Any
+"""Select platform for the KNX Scene Cycler integration."""
+
+from __future__ import annotations
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
@@ -8,130 +8,130 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import (
-    DOMAIN,
-    CONF_GA_SCENE_SELECT,
-    CONF_SCENE_1,
-    CONF_SCENE_2,
-    CONF_SCENE_3,
-    CONF_SCENE_4,
-    CONF_KNX_NUM_1,
-    CONF_KNX_NUM_2,
-    CONF_KNX_NUM_3,
-    CONF_KNX_NUM_4,
-)
+from .const import DOMAIN
+from .controller import SceneButtonController
+from .hub import KNXSceneCyclerHub
+from .models import SceneMapping
 
-_LOGGER = logging.getLogger(__name__)
+DATA_HUB = "hub"
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the KNX Scene Cycler selects from a config entry."""
-    config_data = hass.data[DOMAIN][config_entry.entry_id]
-    functions = config_data.get("functions", [])
+    """Set up KNX Scene Cycler select entities."""
+    entry_data = hass.data[DOMAIN][config_entry.entry_id]
+    hub = entry_data.get(DATA_HUB)
 
-    selects = []
-    for idx, func_config in enumerate(functions):
-        selects.append(
-            KnxSceneCyclerSelect(hass, config_entry, func_config, idx + 1)
+    if not isinstance(hub, KNXSceneCyclerHub):
+        raise RuntimeError(
+            f"KNX Scene Cycler hub unavailable for {config_entry.entry_id}."
         )
 
-    async_add_entities(selects)
+    async_add_entities(
+        KnxSceneCyclerSelect(config_entry, controller)
+        for controller in hub.controllers
+    )
 
 
 class KnxSceneCyclerSelect(SelectEntity):
-    """Representation of a KNX Scene Cycler Select Entity for scene selection."""
+    """Select entity for the regular scenes of one KNX button."""
 
     _attr_has_entity_name = True
 
     def __init__(
-        self, hass: HomeAssistant, config_entry: ConfigEntry, func_config: dict[str, Any], index: int
+        self,
+        config_entry: ConfigEntry,
+        controller: SceneButtonController,
     ) -> None:
-        """Initialize the select entity."""
-        self.hass = hass
-        self._config = func_config
-        self._entry_id = config_entry.entry_id
-        self._index = index
+        self._controller = controller
+        self._config = controller.config
+        self._runtime = controller.runtime
 
-        self._attr_name = "Szene" if index == 1 else f"Szene {index}"
-        self._attr_unique_id = f"{config_entry.entry_id}_select_{index}"
+        self._mapping_by_option = self._build_option_index(
+            self._config.regular_mappings
+        )
+        self._option_by_scene_number = {
+            mapping.knx_scene_number: option
+            for option, mapping in self._mapping_by_option.items()
+            if mapping.knx_scene_number is not None
+        }
 
+        self._attr_name = f"{self._config.name} Scene"
+        self._attr_unique_id = (
+            f"{config_entry.entry_id}_{self._config.button_id}_select"
+        )
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, config_entry.entry_id)},
+            identifiers={(DOMAIN, config_entry.entry_id)}
+        )
+        self._attr_options = list(self._mapping_by_option)
+
+    @property
+    def current_option(self) -> str | None:
+        return self._option_by_scene_number.get(
+            self._runtime.last_regular_scene_number
         )
 
-        self._ga_scene_select = self._config[CONF_GA_SCENE_SELECT]
-
-        self._scene_to_knx = {
-            self._config[CONF_SCENE_1]: int(self._config[CONF_KNX_NUM_1]),
-            self._config[CONF_SCENE_2]: int(self._config[CONF_KNX_NUM_2]),
-            self._config[CONF_SCENE_3]: int(self._config[CONF_KNX_NUM_3]),
-            self._config[CONF_SCENE_4]: int(self._config[CONF_KNX_NUM_4]),
-        }
-        self._knx_to_scene = {v: k for k, v in self._scene_to_knx.items()}
-
-        self._attr_options = ["Szene 1", "Szene 2", "Szene 3", "Szene 4"]
-        
-        self._name_to_entity = {
-            "Szene 1": self._config[CONF_SCENE_1],
-            "Szene 2": self._config[CONF_SCENE_2],
-            "Szene 3": self._config[CONF_SCENE_3],
-            "Szene 4": self._config[CONF_SCENE_4],
-        }
-        self._entity_to_name = {v: k for k, v in self._name_to_entity.items()}
-        self._attr_current_option = "Szene 1"
-
-        # Absolut sichere, dynamische Ermittlung der Schalter-ID ohne Registry-Absturz
-        suffix = "" if index == 1 else f"_{index}"
-        self._target_switch_entity_id = f"switch.{DOMAIN}_szenenwahl{suffix}"
+    @property
+    def available(self) -> bool:
+        return self._runtime.is_available
 
     async def async_added_to_hass(self) -> None:
-        """Register HA bus listeners when added to hass."""
+        await super().async_added_to_hass()
         self.async_on_remove(
-            self.hass.bus.async_listen("knx_event", self._async_handle_knx_event)
+            self._runtime.add_listener(
+                self._async_handle_runtime_update
+            )
         )
 
     async def async_select_option(self, option: str) -> None:
-        """Triggered when user selects a scene from the dropdown in UI."""
-        if option not in self._name_to_entity:
-            return
+        mapping = self._mapping_by_option.get(option)
+        if mapping is None or mapping.knx_scene_number is None:
+            raise ValueError(f"Unsupported scene option: {option!r}.")
 
-        scene_entity_id = self._name_to_entity[option]
-
-        await self.hass.services.async_call(
-            "scene", "turn_on", {"entity_id": scene_entity_id}, blocking=True
+        await self._controller.activate_scene_number(
+            mapping.knx_scene_number
         )
 
-        self._attr_current_option = option
-        self.async_write_ha_state()
-
-        knx_value = self._scene_to_knx[scene_entity_id]
         await self.hass.services.async_call(
-            "knx", "send", {"address": self._ga_scene_select, "payload": knx_value}
-        )
-        
-        # Schaltet den zugehörigen Switch synchron an
-        await self.hass.services.async_call(
-            "switch", "turn_on", {"entity_id": self._target_switch_entity_id}, blocking=False
+            "knx",
+            "send",
+            {
+                "address": self._config.scene_selection_address,
+                "payload": mapping.knx_scene_number,
+            },
+            blocking=True,
         )
 
     @callback
-    def _async_handle_knx_event(self, event: Any) -> None:
-        """Handle incoming Home Assistant knx_event."""
-        destination = event.data.get("destination")
+    def _async_handle_runtime_update(self) -> None:
+        self.async_write_ha_state()
 
-        if not destination or destination != self._ga_scene_select:
-            return
+    @staticmethod
+    def _build_option_index(
+        mappings: tuple[SceneMapping, ...],
+    ) -> dict[str, SceneMapping]:
+        options: dict[str, SceneMapping] = {}
 
-        value = event.data.get("value")
-        if value is None:
-            return
+        for mapping in mappings:
+            if mapping.knx_scene_number is None:
+                raise ValueError(
+                    "Regular scene mappings require a KNX scene number."
+                )
 
-        val_int = int(value)
-        if val_int in self._knx_to_scene:
-            scene_entity = self._knx_to_scene[val_int]
-            if scene_entity in self._entity_to_name:
-                self._attr_current_option = self._entity_to_name[scene_entity]
-                self.async_write_ha_state()
+            option = mapping.name
+            if option in options:
+                option = (
+                    f"{mapping.name} "
+                    f"(KNX {mapping.knx_scene_number})"
+                )
+            if option in options:
+                raise ValueError(
+                    "Scene names and KNX scene numbers must produce "
+                    "unique select options."
+                )
+            options[option] = mapping
+
+        return options
