@@ -12,11 +12,13 @@ Released functionality is documented in `CHANGELOG.md`.
 
 ## Configuration
 
-- [ ] Add editing of existing scene buttons
+- [x] Add editing of existing scene buttons
 - [ ] Add deletion of existing scene buttons
 - [ ] Improve Config Flow user experience
 - [ ] Validate all configuration inputs
-- [ ] Improve error messages
+- [x] Improve error messages
+- [x] Apply Trigger-Mode-specific KNX scene number ranges
+- [x] Make Neutral Scene number 1 implicit in Neutral Scene mode
 
 ---
 
@@ -34,7 +36,7 @@ Released functionality is documented in `CHANGELOG.md`.
 - [ ] Verify status LED behaviour
 - [ ] Review KNX event registration
 - [ ] Validate duplicate event handling
-- [ ] Test all supported trigger modes
+- [x] Test all supported trigger modes
 
 ---
 
@@ -43,7 +45,7 @@ Released functionality is documented in `CHANGELOG.md`.
 - [ ] Review device information
 - [ ] Review entity naming
 - [ ] Review unique IDs
-- [ ] Review translations
+- [x] Review translations
 - [ ] Review diagnostics support
 
 ---
@@ -75,11 +77,11 @@ Released functionality is documented in `CHANGELOG.md`.
 
 ### Manual Tests
 
-- [ ] Verify all trigger modes
-- [ ] Verify scene selection
-- [ ] Verify neutral scene handling
+- [x] Verify all trigger modes
+- [x] Verify scene selection
+- [x] Verify neutral scene handling
 - [ ] Verify status LED behaviour
-- [ ] Verify multiple configured buttons
+- [x] Verify multiple configured buttons
 
 ---
 

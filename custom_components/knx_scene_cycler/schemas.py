@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 import voluptuous as vol
@@ -9,6 +10,7 @@ import voluptuous as vol
 from homeassistant.helpers import selector
 
 from .const import (
+    CONF_BUTTON_ID,
     CONF_BUTTON_NAME,
     CONF_HUB_NAME,
     CONF_KNX_SCENE_NUMBER,
@@ -26,6 +28,7 @@ from .const import (
 from .models import TriggerMode
 
 ACTION_ADD_BUTTON = "add_button"
+ACTION_EDIT_BUTTON = "edit_button"
 ACTION_FINISH = "finish"
 
 DEFAULT_HUB_NAME = "KNX Scene Cycler"
@@ -55,11 +58,16 @@ def _options_action_schema() -> vol.Schema:
             vol.Required(
                 CONF_ACTION,
                 default=ACTION_ADD_BUTTON,
-            ): vol.In(
-                {
-                    ACTION_ADD_BUTTON: "Add scene button",
-                    ACTION_FINISH: "Finish",
-                }
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[
+                        ACTION_ADD_BUTTON,
+                        ACTION_EDIT_BUTTON,
+                        ACTION_FINISH,
+                    ],
+                    translation_key="options_action",
+                    mode=selector.SelectSelectorMode.LIST,
+                )
             ),
         }
     )
@@ -68,29 +76,33 @@ def _options_action_schema() -> vol.Schema:
 def _button_trigger_schema(
     *,
     default_button_name: str,
+    defaults: Mapping[str, Any] | None = None,
 ) -> vol.Schema:
     """Return the schema for button name and trigger mode."""
+    form_defaults = defaults or {}
+
     return vol.Schema(
         {
             vol.Required(
                 CONF_BUTTON_NAME,
-                default=default_button_name,
+                default=form_defaults.get(
+                    CONF_BUTTON_NAME,
+                    default_button_name,
+                ),
             ): str,
             vol.Required(
                 CONF_TRIGGER_MODE,
-                default=TriggerMode.SEPARATE_TOGGLE.value,
+                default=form_defaults.get(
+                    CONF_TRIGGER_MODE,
+                    TriggerMode.SEPARATE_TOGGLE.value,
+                ),
             ): selector.SelectSelector(
                 selector.SelectSelectorConfig(
                     options=[
-                        selector.SelectOptionDict(
-                            value=TriggerMode.SEPARATE_TOGGLE.value,
-                            label="Separate Toggle GA",
-                        ),
-                        selector.SelectOptionDict(
-                            value=TriggerMode.NEUTRAL_SCENE.value,
-                            label="Neutral Scene on Scene GA",
-                        ),
+                        TriggerMode.SEPARATE_TOGGLE.value,
+                        TriggerMode.NEUTRAL_SCENE.value,
                     ],
+                    translation_key="trigger_mode",
                     mode=selector.SelectSelectorMode.DROPDOWN,
                 )
             ),
@@ -101,25 +113,61 @@ def _button_trigger_schema(
 def _button_addresses_schema(
     *,
     trigger_mode: TriggerMode,
+    defaults: Mapping[str, Any] | None = None,
 ) -> vol.Schema:
     """Return the group-address schema for one trigger mode."""
+    form_defaults = defaults or {}
     schema: dict[vol.Marker, Any] = {
-        vol.Required(CONF_SCENE_SELECTION_ADDRESS): str,
+        vol.Required(
+            CONF_SCENE_SELECTION_ADDRESS,
+            default=form_defaults.get(
+                CONF_SCENE_SELECTION_ADDRESS,
+                vol.UNDEFINED,
+            ),
+        ): str,
     }
 
     if trigger_mode is TriggerMode.SEPARATE_TOGGLE:
-        schema[vol.Required(CONF_TOGGLE_ADDRESS)] = str
+        schema[
+            vol.Required(
+                CONF_TOGGLE_ADDRESS,
+                default=form_defaults.get(
+                    CONF_TOGGLE_ADDRESS,
+                    vol.UNDEFINED,
+                ),
+            )
+        ] = str
 
-    schema[vol.Optional(CONF_STATUS_LED_ADDRESS)] = str
+    schema[
+        vol.Optional(
+            CONF_STATUS_LED_ADDRESS,
+            default=form_defaults.get(
+                CONF_STATUS_LED_ADDRESS,
+                vol.UNDEFINED,
+            ),
+        )
+    ] = str
 
     return vol.Schema(schema)
 
 
-def _regular_scenes_schema() -> vol.Schema:
+def _regular_scenes_schema(
+    *,
+    trigger_mode: TriggerMode = TriggerMode.SEPARATE_TOGGLE,
+    defaults: Mapping[str, Any] | None = None,
+) -> vol.Schema:
     """Return the schema for four regular scene mappings."""
+    form_defaults = defaults or {}
     schema: dict[vol.Marker, Any] = {}
     scene_selector = _scene_selector()
-    scene_number_schema = _scene_number_schema()
+    minimum_scene_number = (
+        DEFAULT_NEUTRAL_KNX_SCENE_NUMBER + 1
+        if trigger_mode is TriggerMode.NEUTRAL_SCENE
+        else MIN_KNX_SCENE_NUMBER
+    )
+    scene_number_schema = _scene_number_schema(
+        minimum=minimum_scene_number,
+    )
 
     for mapping_number in range(
         1,
@@ -128,18 +176,33 @@ def _regular_scenes_schema() -> vol.Schema:
         schema[
             vol.Required(
                 _mapping_name_key(mapping_number),
-                default=f"Scene {mapping_number}",
+                default=form_defaults.get(
+                    _mapping_name_key(mapping_number),
+                    f"Scene {mapping_number}",
+                ),
             )
         ] = str
         schema[
             vol.Required(
-                _scene_entity_key(mapping_number)
+                _scene_entity_key(mapping_number),
+                default=form_defaults.get(
+                    _scene_entity_key(mapping_number),
+                    vol.UNDEFINED,
+                ),
             )
         ] = scene_selector
         schema[
             vol.Required(
                 _knx_scene_number_key(mapping_number),
-                default=mapping_number,
+                default=form_defaults.get(
+                    _knx_scene_number_key(mapping_number),
+                    mapping_number
+                    + (
+                        1
+                        if trigger_mode is TriggerMode.NEUTRAL_SCENE
+                        else 0
+                    ),
+                ),
             )
         ] = scene_number_schema
 
@@ -149,25 +212,26 @@ def _regular_scenes_schema() -> vol.Schema:
 def _neutral_scene_schema(
     *,
     trigger_mode: TriggerMode,
+    defaults: Mapping[str, Any] | None = None,
 ) -> vol.Schema:
     """Return the neutral scene schema for one trigger mode."""
+    form_defaults = defaults or {}
     schema: dict[vol.Marker, Any] = {
         vol.Required(
             _neutral_mapping_name_key(),
-            default="Neutral",
+            default=form_defaults.get(
+                _neutral_mapping_name_key(),
+                "Neutral",
+            ),
         ): str,
         vol.Required(
-            _neutral_scene_entity_key()
+            _neutral_scene_entity_key(),
+            default=form_defaults.get(
+                _neutral_scene_entity_key(),
+                vol.UNDEFINED,
+            ),
         ): _scene_selector(),
     }
-
-    if trigger_mode is TriggerMode.NEUTRAL_SCENE:
-        schema[
-            vol.Required(
-                _neutral_knx_scene_number_key(),
-                default=DEFAULT_NEUTRAL_KNX_SCENE_NUMBER,
-            )
-        ] = _scene_number_schema()
 
     return vol.Schema(schema)
 
@@ -181,14 +245,40 @@ def _scene_selector() -> selector.EntitySelector:
     )
 
 
-def _scene_number_schema() -> vol.All:
+def _scene_number_schema(
+    *,
+    minimum: int = MIN_KNX_SCENE_NUMBER,
+) -> selector.NumberSelector:
     """Return the KNX scene number validator."""
-    return vol.All(
-        vol.Coerce(int),
-        vol.Range(
-            min=MIN_KNX_SCENE_NUMBER,
+    return selector.NumberSelector(
+        selector.NumberSelectorConfig(
+            min=minimum,
             max=MAX_KNX_SCENE_NUMBER,
-        ),
+            step=1,
+            mode=selector.NumberSelectorMode.BOX,
+        )
+    )
+
+
+def _button_selection_schema(
+    button_options: Mapping[str, str],
+) -> vol.Schema:
+    """Return the schema for selecting an existing scene button."""
+    return vol.Schema(
+        {
+            vol.Required(CONF_BUTTON_ID): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[
+                        selector.SelectOptionDict(
+                            value=button_id,
+                            label=button_name,
+                        )
+                        for button_id, button_name in button_options.items()
+                    ],
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+        }
     )
 
 

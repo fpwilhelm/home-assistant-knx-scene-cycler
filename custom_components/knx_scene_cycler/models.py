@@ -21,6 +21,7 @@ from .const import (
     CONF_STATUS_LED_ADDRESS,
     CONF_TOGGLE_ADDRESS,
     CONF_TRIGGER_MODE,
+    DEFAULT_NEUTRAL_KNX_SCENE_NUMBER,
     MAX_KNX_SCENE_NUMBER,
     MAX_LED_COLOR_VALUE,
     MAX_REGULAR_SCENE_MAPPINGS,
@@ -241,9 +242,13 @@ class SceneButtonConfig:
                     "The neutral mapping must not have a KNX scene number "
                     "in separate-toggle mode."
                 )
-        elif neutral_mapping.knx_scene_number is None:
+        elif (
+            neutral_mapping.knx_scene_number
+            != DEFAULT_NEUTRAL_KNX_SCENE_NUMBER
+        ):
             raise ValueError(
-                "The neutral mapping requires a KNX scene number "
+                "The neutral mapping requires KNX scene number "
+                f"{DEFAULT_NEUTRAL_KNX_SCENE_NUMBER} "
                 "in neutral-scene mode."
             )
 

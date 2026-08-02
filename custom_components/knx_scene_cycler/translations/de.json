@@ -1,0 +1,135 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "KNX Scene Cycler Hub erstellen",
+        "data": {
+          "hub_name": "Hub-Name"
+        }
+      },
+      "button_trigger": {
+        "title": "Szenentaster konfigurieren",
+        "data": {
+          "button_name": "Tastername",
+          "trigger_mode": "Auslösemodus"
+        }
+      },
+      "button_addresses": {
+        "title": "KNX-Gruppenadressen konfigurieren",
+        "data": {
+          "scene_selection_address": "Gruppenadresse für Szenenauswahl",
+          "toggle_address": "Gruppenadresse zum Umschalten",
+          "status_led_address": "Gruppenadresse der Status-LED"
+        }
+      },
+      "button_scenes": {
+        "title": "Reguläre Szenen konfigurieren",
+        "description": "Im Modus „Separate Umschalt-Gruppenadresse“ können reguläre Szenen die KNX-Szenennummern 1–64 verwenden. Im Modus „Neutralszene auf Szenen-Gruppenadresse“ ist Szenennummer 1 für Neutral reserviert; reguläre Szenen verwenden 2–64.",
+        "data": {
+          "mapping_name_1": "Name der Szene 1",
+          "scene_entity_id_1": "Entität der Szene 1",
+          "knx_scene_number_1": "KNX-Szenennummer der Szene 1",
+          "mapping_name_2": "Name der Szene 2",
+          "scene_entity_id_2": "Entität der Szene 2",
+          "knx_scene_number_2": "KNX-Szenennummer der Szene 2",
+          "mapping_name_3": "Name der Szene 3",
+          "scene_entity_id_3": "Entität der Szene 3",
+          "knx_scene_number_3": "KNX-Szenennummer der Szene 3",
+          "mapping_name_4": "Name der Szene 4",
+          "scene_entity_id_4": "Entität der Szene 4",
+          "knx_scene_number_4": "KNX-Szenennummer der Szene 4"
+        }
+      },
+      "button_neutral": {
+        "title": "Neutralszene konfigurieren",
+        "description": "Im Modus „Neutralszene“ wird die KNX-Szenennummer 1 automatisch zugewiesen.",
+        "data": {
+          "mapping_name_neutral": "Name der Neutralszene",
+          "scene_entity_id_neutral": "Entität der Neutralszene"
+        }
+      }
+    },
+    "error": {
+      "duplicate_knx_scene_numbers": "Die KNX-Szenennummern müssen innerhalb eines Szenentasters eindeutig sein.",
+      "duplicate_group_addresses": "Die Gruppenadressen für Szenenauswahl und Umschalten müssen unterschiedlich sein.",
+      "invalid_configuration": "Die Konfiguration des Szenentasters ist ungültig."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Szenentaster verwalten",
+        "data": {
+          "action": "Aktion"
+        }
+      },
+      "select_button": {
+        "title": "Szenentaster auswählen",
+        "data": {
+          "button_id": "Szenentaster"
+        }
+      },
+      "button_trigger": {
+        "title": "Szenentaster konfigurieren",
+        "data": {
+          "button_name": "Tastername",
+          "trigger_mode": "Auslösemodus"
+        }
+      },
+      "button_addresses": {
+        "title": "KNX-Gruppenadressen konfigurieren",
+        "data": {
+          "scene_selection_address": "Gruppenadresse für Szenenauswahl",
+          "toggle_address": "Gruppenadresse zum Umschalten",
+          "status_led_address": "Gruppenadresse der Status-LED"
+        }
+      },
+      "button_scenes": {
+        "title": "Reguläre Szenen konfigurieren",
+        "description": "Im Modus „Separate Umschalt-Gruppenadresse“ können reguläre Szenen die KNX-Szenennummern 1–64 verwenden. Im Modus „Neutralszene auf Szenen-Gruppenadresse“ ist Szenennummer 1 für Neutral reserviert; reguläre Szenen verwenden 2–64.",
+        "data": {
+          "mapping_name_1": "Name der Szene 1",
+          "scene_entity_id_1": "Entität der Szene 1",
+          "knx_scene_number_1": "KNX-Szenennummer der Szene 1",
+          "mapping_name_2": "Name der Szene 2",
+          "scene_entity_id_2": "Entität der Szene 2",
+          "knx_scene_number_2": "KNX-Szenennummer der Szene 2",
+          "mapping_name_3": "Name der Szene 3",
+          "scene_entity_id_3": "Entität der Szene 3",
+          "knx_scene_number_3": "KNX-Szenennummer der Szene 3",
+          "mapping_name_4": "Name der Szene 4",
+          "scene_entity_id_4": "Entität der Szene 4",
+          "knx_scene_number_4": "KNX-Szenennummer der Szene 4"
+        }
+      },
+      "button_neutral": {
+        "title": "Neutralszene konfigurieren",
+        "description": "Im Modus „Neutralszene“ wird die KNX-Szenennummer 1 automatisch zugewiesen.",
+        "data": {
+          "mapping_name_neutral": "Name der Neutralszene",
+          "scene_entity_id_neutral": "Entität der Neutralszene"
+        }
+      }
+    },
+    "error": {
+      "duplicate_knx_scene_numbers": "Die KNX-Szenennummern müssen innerhalb eines Szenentasters eindeutig sein.",
+      "duplicate_group_addresses": "Die Gruppenadressen für Szenenauswahl und Umschalten müssen unterschiedlich sein.",
+      "invalid_configuration": "Die Konfiguration des Szenentasters ist ungültig."
+    }
+  },
+  "selector": {
+    "options_action": {
+      "options": {
+        "add_button": "Szenentaster hinzufügen",
+        "edit_button": "Szenentaster bearbeiten",
+        "finish": "Fertig"
+      }
+    },
+    "trigger_mode": {
+      "options": {
+        "separate_toggle": "Separate Umschalt-Gruppenadresse",
+        "neutral_scene": "Neutralszene auf Szenen-Gruppenadresse"
+      }
+    }
+  }
+}

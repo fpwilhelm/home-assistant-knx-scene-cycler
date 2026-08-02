@@ -41,13 +41,21 @@ The scene selection group address is used exclusively for selecting regular scen
 
 A dedicated toggle group address switches between the currently active regular scene and the configured neutral scene.
 
+The Neutral Mapping has no KNX scene number in this mode. Regular Scene
+Mappings may use the complete supported range from 1 through 64.
+
 This mode provides the clearest separation between scene selection and toggle behaviour.
 
 ---
 
 ## Neutral Scene
 
-The neutral scene is represented by a dedicated Scene Mapping without a KNX scene number.
+The neutral scene is represented by a dedicated Scene Mapping with KNX scene
+number 1. This value is fixed by the integration and is not configured by the
+user.
+
+KNX scene number 1 is reserved for the Neutral Mapping in this mode. Regular
+Scene Mappings therefore use scene numbers 2 through 64.
 
 When activated, the currently active regular Scene Mapping is preserved by the Runtime and can later be restored.
 

@@ -71,9 +71,14 @@ Regular mappings are activated directly through KNX scene numbers and can become
 
 Represents the neutral state.
 
-The neutral mapping intentionally has no KNX scene number.
+Its KNX scene number depends on the configured Trigger Mode:
 
-It is activated only through the configured trigger mode and allows temporarily leaving the currently active regular scene while preserving it for later restoration.
+- In Separate Toggle mode it has no KNX scene number.
+- In Neutral Scene mode it uses the reserved KNX scene number 1.
+
+It is activated through the configured trigger mode and allows temporarily
+leaving the currently active regular scene while preserving it for later
+restoration.
 
 ---
 

@@ -145,17 +145,25 @@ class KnxSceneCyclerConfigFlow(
     ) -> FlowResult:
         """Configure regular scenes for the first button."""
         errors: dict[str, str] = {}
+        form_defaults = self._button_data
 
         if user_input is not None:
             if _has_duplicate_regular_scene_numbers(user_input):
                 errors["base"] = "duplicate_knx_scene_numbers"
+                form_defaults = {
+                    **self._button_data,
+                    **user_input,
+                }
             else:
                 self._button_data.update(user_input)
                 return await self.async_step_button_neutral()
 
         return self.async_show_form(
             step_id="button_scenes",
-            data_schema=_regular_scenes_schema(),
+            data_schema=_regular_scenes_schema(
+                trigger_mode=_trigger_mode(self._button_data),
+                defaults=form_defaults,
+            ),
             errors=errors,
         )
 
@@ -165,6 +173,7 @@ class KnxSceneCyclerConfigFlow(
     ) -> FlowResult:
         """Configure the neutral scene and create the entry."""
         errors: dict[str, str] = {}
+        form_defaults = self._button_data
 
         if user_input is not None:
             candidate_data = {
@@ -176,6 +185,7 @@ class KnxSceneCyclerConfigFlow(
                 button_config = _create_button_config(candidate_data)
             except ValueError as err:
                 errors["base"] = _model_error_key(err)
+                form_defaults = candidate_data
             else:
                 return self.async_create_entry(
                     title=self._hub_name,
@@ -191,6 +201,7 @@ class KnxSceneCyclerConfigFlow(
             step_id="button_neutral",
             data_schema=_neutral_scene_schema(
                 trigger_mode=_trigger_mode(self._button_data),
+                defaults=form_defaults,
             ),
             errors=errors,
         )

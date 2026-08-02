@@ -10,8 +10,39 @@ and adheres to Semantic Versioning.
 
 # [Unreleased]
 
+## Added
+
+- Editing of existing Scene Buttons through the Options Flow
+- Selection of the Scene Button to edit
+- German and English Config Flow translations
+- Trigger-Mode-specific scene number validation
+
+## Changed
+
+- Add and Edit now reuse the same Button Configuration Flow
+- Existing values are prefilled when editing a Scene Button
+- Editing preserves the Button ID, button order and internal mapping metadata
+- KNX scene numbers use numeric input fields instead of sliders
+- Neutral Scene mode now assigns KNX scene number 1 implicitly to the Neutral
+  Mapping
+- Regular Scene Mappings in Neutral Scene mode are restricted to KNX scene
+  numbers 2 through 64
+- Invalid form values remain available for correction after validation errors
+- Config Flow validation messages are presented as translated user-facing text
+
+## Tested
+
+- Complete Add and Edit flows in Home Assistant
+- Trigger-Mode-specific input fields and scene number ranges
+- Duplicate KNX scene number validation
+- Physical KNX scene selection and neutral activation
+- Home Assistant Select and Switch entity behaviour
+- Integration reload and Home Assistant restart behaviour
+
 ## Planned
 
+- Removing Scene Buttons
+- Cloning Scene Buttons
 - Additional trigger modes
 - Extended LED functionality
 - Improved user experience

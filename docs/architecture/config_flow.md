@@ -67,7 +67,36 @@ Before the configuration is stored, the Config Flow validates:
 - Unique KNX scene numbers
 - Required configuration values
 
+KNX scene numbers are entered as integer values and are restricted to the
+supported range from 1 through 64.
+
 Invalid configurations are rejected before becoming part of the persistent configuration.
+
+---
+
+# Trigger-Mode-Specific Scene Number Rules
+
+The available KNX scene numbers depend on the selected Trigger Mode.
+
+## Separate Toggle
+
+- Regular Scene Mappings may use KNX scene numbers 1 through 64.
+- The Neutral Mapping has no KNX scene number because neutral activation uses
+  the separate toggle group address.
+
+## Neutral Scene
+
+- KNX scene number 1 is reserved for the Neutral Mapping.
+- The Neutral Mapping uses scene number 1 automatically; the Config Flow does
+  not ask the user to enter it.
+- Regular Scene Mappings may use KNX scene numbers 2 through 64.
+- The Config Flow explains that scene number 1 is reserved in this Trigger
+  Mode.
+
+This reservation is required because KNX scene number 1 and raw KNX scene
+value 0 represent the same DPT 17.001 telegram. A regular and a neutral mapping
+on the same group address therefore cannot both use scene number 1
+unambiguously.
 
 ---
 
@@ -81,6 +110,55 @@ The Config Flow is executed when:
 After successful validation, the configuration is stored by Home Assistant.
 
 During startup, the integration recreates its internal architecture from this stored configuration.
+
+---
+
+# Scene Button Management
+
+Existing Config Entries manage their Scene Buttons through the Options Flow.
+
+The user first chooses an operation:
+
+- Add Scene Button
+- Edit Scene Button
+- Finish
+
+Editing requires selecting an existing Scene Button. The stored
+`SceneButtonConfig` is then converted into form data and used to prefill the
+same Button Configuration Flow that is used when adding a Scene Button.
+
+```text
+Manage Scene Buttons
+        │
+        ├── Add Scene Button
+        │
+        ├── Edit Scene Button
+        │       │
+        │       └── Select Scene Button
+        │
+        └── Finish
+                │
+                ▼
+      Button Configuration Flow
+                │
+                ├── Trigger Mode
+                ├── Group Addresses
+                ├── Regular Scene Mappings
+                ├── Neutral Scene Mapping
+                └── Save
+```
+
+The selected operation determines only how the completed configuration is
+stored:
+
+- Add appends the new Scene Button.
+- Edit replaces the selected Scene Button while preserving its stable Button
+  ID, its position in the stored list and mapping metadata that is not exposed
+  by the current forms.
+
+The shared Button Configuration Flow is intentionally independent from the
+operation. This allows future operations such as Clone to reuse the same forms
+without duplicating configuration logic.
 
 ---
 
@@ -100,8 +178,8 @@ This clear separation keeps configuration independent from system operation.
 
 The Config Flow architecture allows future enhancements including:
 
-- Editing existing scene buttons
 - Removing scene buttons
+- Cloning scene buttons
 - Improved validation
 - Additional Trigger Modes
 - Migration support for future configuration versions

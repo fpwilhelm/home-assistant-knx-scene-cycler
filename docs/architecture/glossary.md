@@ -40,7 +40,9 @@ Within KNX Scene Cycler, scene numbers are used to select the corresponding Scen
 
 A special Scene Mapping representing the neutral state.
 
-Unlike a Regular Mapping, a Neutral Mapping has no KNX Scene Number and is activated only through the configured Trigger Mode.
+Its KNX Scene Number depends on the Trigger Mode. It has no KNX Scene Number
+in Separate Toggle mode and uses the reserved KNX Scene Number 1 in Neutral
+Scene mode.
 
 ---
 
