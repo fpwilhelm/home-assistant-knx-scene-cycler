@@ -70,6 +70,10 @@
           "button_id": "Szenentaster"
         }
       },
+      "confirm_remove": {
+        "title": "Szenentaster entfernen",
+        "description": "Soll der Szenentaster „{button_name}“ wirklich entfernt werden? Seine Home-Assistant-Entitäten werden gelöscht. Gemeinsam verwendete KNX-Gruppenadressen bleiben für andere Szenentaster registriert."
+      },
       "button_trigger": {
         "title": "Szenentaster konfigurieren",
         "data": {
@@ -124,6 +128,7 @@
       "options": {
         "add_button": "Szenentaster hinzufügen",
         "edit_button": "Szenentaster bearbeiten",
+        "remove_button": "Szenentaster entfernen",
         "finish": "Fertig"
       }
     },

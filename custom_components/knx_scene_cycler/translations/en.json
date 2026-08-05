@@ -70,6 +70,10 @@
           "button_id": "Scene button"
         }
       },
+      "confirm_remove": {
+        "title": "Remove scene button",
+        "description": "Do you really want to remove the scene button “{button_name}”? Its Home Assistant entities will be deleted. Shared KNX group addresses remain registered for other scene buttons."
+      },
       "button_trigger": {
         "title": "Configure scene button",
         "data": {
@@ -124,6 +128,7 @@
       "options": {
         "add_button": "Add scene button",
         "edit_button": "Edit scene button",
+        "remove_button": "Remove scene button",
         "finish": "Finish"
       }
     },

@@ -29,6 +29,7 @@ from .models import TriggerMode
 
 ACTION_ADD_BUTTON = "add_button"
 ACTION_EDIT_BUTTON = "edit_button"
+ACTION_REMOVE_BUTTON = "remove_button"
 ACTION_FINISH = "finish"
 
 DEFAULT_HUB_NAME = "KNX Scene Cycler"
@@ -51,8 +52,19 @@ def _hub_schema() -> vol.Schema:
     )
 
 
-def _options_action_schema() -> vol.Schema:
+def _options_action_schema(
+    *,
+    can_remove: bool = True,
+) -> vol.Schema:
     """Return the options-flow action schema."""
+    actions = [
+        ACTION_ADD_BUTTON,
+        ACTION_EDIT_BUTTON,
+    ]
+    if can_remove:
+        actions.append(ACTION_REMOVE_BUTTON)
+    actions.append(ACTION_FINISH)
+
     return vol.Schema(
         {
             vol.Required(
@@ -60,17 +72,18 @@ def _options_action_schema() -> vol.Schema:
                 default=ACTION_ADD_BUTTON,
             ): selector.SelectSelector(
                 selector.SelectSelectorConfig(
-                    options=[
-                        ACTION_ADD_BUTTON,
-                        ACTION_EDIT_BUTTON,
-                        ACTION_FINISH,
-                    ],
+                    options=actions,
                     translation_key="options_action",
                     mode=selector.SelectSelectorMode.LIST,
                 )
             ),
         }
     )
+
+
+def _remove_confirmation_schema() -> vol.Schema:
+    """Return the empty scene-button removal confirmation schema."""
+    return vol.Schema({})
 
 
 def _button_trigger_schema(

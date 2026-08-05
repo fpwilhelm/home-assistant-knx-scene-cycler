@@ -18,6 +18,10 @@ Released functionality is documented in `CHANGELOG.md`.
 - Restoring the last regular scene from Neutral Scene mode passed manual HA/KNX verification for both a short press and a repeated long press; subsequent scene cycling also continues correctly.
 - The ETS test setup now uses only one physical button for `31/0/200`; one physical telegram per press was confirmed.
 - The current Config Flow and Neutral Scene changes have passed their manual regression tests.
+- Scene Button deletion passed the complete manual HA/KNX test: confirmation,
+  entity cleanup, preserved button order, shared GA registration, collision-free
+  reuse of the released Button ID and protection of the final Scene Button were
+  verified.
 
 ---
 
@@ -25,7 +29,7 @@ Released functionality is documented in `CHANGELOG.md`.
 
 - [x] Add editing of existing scene buttons
 - [x] Automatically register configured KNX group addresses
-- [ ] Add deletion of existing scene buttons
+- [x] Add deletion of existing scene buttons
 - [ ] Clone scene buttons as independent configurations
 - [ ] Improve Config Flow user experience
 - [ ] Validate all configuration inputs
@@ -101,6 +105,7 @@ Released functionality is documented in `CHANGELOG.md`.
 - [x] Verify all trigger modes
 - [x] Verify scene selection
 - [x] Verify neutral scene handling
+- [x] Verify Scene Button deletion and shared-GA lifecycle
 - [ ] Verify status LED behaviour
 - [x] Verify multiple configured buttons
 

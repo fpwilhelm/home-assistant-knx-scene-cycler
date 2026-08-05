@@ -131,6 +131,7 @@ The user first chooses an operation:
 
 - Add Scene Button
 - Edit Scene Button
+- Remove Scene Button
 - Finish
 
 Editing requires selecting an existing Scene Button. The stored
@@ -145,6 +146,11 @@ Manage Scene Buttons
         ├── Edit Scene Button
         │       │
         │       └── Select Scene Button
+        │
+        ├── Remove Scene Button
+        │       │
+        │       ├── Select Scene Button
+        │       └── Confirm Removal
         │
         └── Finish
                 │
@@ -165,6 +171,20 @@ stored:
 - Edit replaces the selected Scene Button while preserving its stable Button
   ID, its position in the stored list and mapping metadata that is not exposed
   by the current forms.
+- Remove deletes the selected Scene Button while preserving the order of all
+  remaining buttons. Its Switch and Select entity-registry entries are removed.
+  Shared KNX input addresses remain registered while another Scene Button or
+  Config Entry still uses them.
+
+The final Scene Button cannot be removed through this operation. Removing the
+entire Config Entry is the explicit way to remove the last Scene Button and its
+Hub.
+
+Manual HA/KNX verification covered deletion with two Scene Buttons sharing one
+scene-selection address. Removing one button left the shared address registered
+for the remaining button, removed only the deleted button's entities and
+mappings, and allowed its released stable Button ID to be reused without an
+entity-registry collision.
 
 The shared Button Configuration Flow is intentionally independent from the
 operation. This allows future operations such as Clone to reuse the same forms
@@ -188,7 +208,6 @@ This clear separation keeps configuration independent from system operation.
 
 The Config Flow architecture allows future enhancements including:
 
-- Removing scene buttons
 - Cloning scene buttons
 - Improved validation
 - Additional Trigger Modes
