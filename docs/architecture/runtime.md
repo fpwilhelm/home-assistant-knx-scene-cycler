@@ -77,6 +77,20 @@ Other components read Runtime information but do not modify it directly.
 
 ---
 
+# Neutral Restoration
+
+Activating the Neutral Mapping changes the current state without replacing
+`last_regular_scene_number`.
+
+This allows a later Neutral Scene telegram or a Home Assistant switch action
+to restore the last successfully activated regular Scene Mapping.
+
+Immediately after startup, `current_scene_number` is unknown. A Neutral Scene
+telegram received in that state activates neutral rather than restoring the
+default regular mapping.
+
+---
+
 # Design Principles
 
 The Runtime follows several design principles.

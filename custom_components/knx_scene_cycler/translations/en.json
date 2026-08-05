@@ -24,7 +24,7 @@
       },
       "button_scenes": {
         "title": "Configure regular scenes",
-        "description": "In Separate Toggle mode, regular scenes may use KNX scene numbers 1–64. In Neutral Scene mode, scene number 1 is reserved for neutral and regular scenes use 2–64.",
+        "description": "Four scenes are suggested. Only rows with a selected Home Assistant scene are stored; the remaining rows are ignored. At least one regular scene is required. Separate Toggle mode supports KNX scene numbers 1–64. In Neutral Scene mode, scene number 1 is reserved for neutral and regular scenes use 2–64.",
         "data": {
           "mapping_name_1": "Scene 1 name",
           "scene_entity_id_1": "Scene 1 entity",
@@ -42,7 +42,7 @@
       },
       "button_neutral": {
         "title": "Configure neutral scene",
-        "description": "In Neutral Scene mode, KNX scene number 1 is assigned automatically.",
+        "description": "In Neutral Scene mode, KNX scene number 1 is assigned automatically. The first activation switches to neutral; another activation restores the last regular scene.",
         "data": {
           "mapping_name_neutral": "Neutral scene name",
           "scene_entity_id_neutral": "Neutral scene entity"
@@ -52,6 +52,7 @@
     "error": {
       "duplicate_knx_scene_numbers": "KNX scene numbers must be unique within one scene button.",
       "duplicate_group_addresses": "Scene selection and toggle group addresses must be different.",
+      "conflicting_group_address_roles": "A group address cannot be used for scene selection on one scene button and as a toggle address on another.",
       "invalid_configuration": "The scene button configuration is invalid."
     }
   },
@@ -86,7 +87,7 @@
       },
       "button_scenes": {
         "title": "Configure regular scenes",
-        "description": "In Separate Toggle mode, regular scenes may use KNX scene numbers 1–64. In Neutral Scene mode, scene number 1 is reserved for neutral and regular scenes use 2–64.",
+        "description": "Four scenes are suggested. Only rows with a selected Home Assistant scene are stored; the remaining rows are ignored. At least one regular scene is required. Separate Toggle mode supports KNX scene numbers 1–64. In Neutral Scene mode, scene number 1 is reserved for neutral and regular scenes use 2–64.",
         "data": {
           "mapping_name_1": "Scene 1 name",
           "scene_entity_id_1": "Scene 1 entity",
@@ -104,7 +105,7 @@
       },
       "button_neutral": {
         "title": "Configure neutral scene",
-        "description": "In Neutral Scene mode, KNX scene number 1 is assigned automatically.",
+        "description": "In Neutral Scene mode, KNX scene number 1 is assigned automatically. The first activation switches to neutral; another activation restores the last regular scene.",
         "data": {
           "mapping_name_neutral": "Neutral scene name",
           "scene_entity_id_neutral": "Neutral scene entity"
@@ -114,6 +115,7 @@
     "error": {
       "duplicate_knx_scene_numbers": "KNX scene numbers must be unique within one scene button.",
       "duplicate_group_addresses": "Scene selection and toggle group addresses must be different.",
+      "conflicting_group_address_roles": "A group address cannot be used for scene selection on one scene button and as a toggle address on another.",
       "invalid_configuration": "The scene button configuration is invalid."
     }
   },

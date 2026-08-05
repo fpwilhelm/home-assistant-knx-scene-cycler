@@ -18,8 +18,10 @@ Complete the functionality introduced by the new architecture.
 
 Planned topics include:
 
+- Automatic registration of configured KNX group addresses
 - Edit existing scene buttons
 - Delete scene buttons
+- Clone scene buttons as independent configurations
 - Extended LED support
 - Improved configuration flow
 - User interface improvements
@@ -56,6 +58,24 @@ Planned topics include:
 
 ---
 
+### Post-v0.5.0 — Synchronized Scene Control
+
+Allow multiple physical KNX buttons with different group addresses or local
+KNX scene numbers to control one shared logical set of Home Assistant scenes.
+
+Planned development order:
+
+1. Document the synchronization-group concept and data model.
+2. Introduce shared logical Scene Mappings and shared Runtime state.
+3. Allow existing independent Scene Buttons to join a synchronization group.
+
+A synchronization group shares logical scene identities, the last active
+regular scene and the active/neutral state. Each physical button binding keeps
+its own KNX group addresses, local KNX scene numbers and status LED address.
+This avoids coupling synchronization to identical ETS programming.
+
+---
+
 ### v1.0.0 — First Public Release
 
 Goals:
@@ -76,6 +96,8 @@ Future development may include:
 - Additional trigger modes
 - Advanced LED feedback
 - Enhanced scene management
+- Shared logical Scene Mappings
+- Synchronization groups for multiple physical KNX buttons
 - Import and export of scene mappings
 - Additional KNX device compatibility
 - Further Home Assistant integration improvements

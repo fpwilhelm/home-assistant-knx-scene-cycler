@@ -63,6 +63,7 @@ Current functionality includes:
 - Multiple independent KNX scene buttons
 - Scene cycling with configurable neutral state
 - Return to the previously active scene
+- Automatic registration of configured KNX input group addresses
 - Optional KNX status LED feedback
 - Home Assistant Config Flow
 - Home Assistant Select entity
@@ -91,6 +92,7 @@ The integration follows a modular architecture consisting of independent compone
 - Config Flow
 - Hub
 - Controller
+- KNX Event Registration
 - Runtime
 - Scene Mapping Model
 

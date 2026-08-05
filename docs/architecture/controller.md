@@ -73,6 +73,28 @@ This sequence guarantees that all operational decisions pass through a single co
 
 ---
 
+# Neutral Scene Toggle
+
+In Neutral Scene mode, KNX scene number 1 is interpreted according to the
+current Runtime state:
+
+```text
+Unknown or regular state + scene number 1
+        └── Activate Neutral Mapping
+
+Neutral state + scene number 1
+        └── Restore last regular Scene Mapping
+
+Neutral state + regular scene number
+        └── Restore last regular Scene Mapping
+```
+
+The Controller decides which Scene Mapping to activate. KNX feedback required
+to synchronize a physical button is sent by the Hub after the Controller has
+successfully restored the regular scene.
+
+---
+
 # Business Logic
 
 The Controller evaluates the current Runtime together with the configured Scene Mappings.

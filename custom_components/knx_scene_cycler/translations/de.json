@@ -24,7 +24,7 @@
       },
       "button_scenes": {
         "title": "Reguläre Szenen konfigurieren",
-        "description": "Im Modus „Separate Umschalt-Gruppenadresse“ können reguläre Szenen die KNX-Szenennummern 1–64 verwenden. Im Modus „Neutralszene auf Szenen-Gruppenadresse“ ist Szenennummer 1 für Neutral reserviert; reguläre Szenen verwenden 2–64.",
+        "description": "Es werden vier Szenen vorgeschlagen. Nur Zeilen mit ausgewählter Home-Assistant-Szene werden gespeichert; die übrigen Zeilen bleiben unberücksichtigt. Mindestens eine reguläre Szene ist erforderlich. Im Modus „Separate Umschalt-Gruppenadresse“ sind KNX-Szenennummern 1–64 möglich. Im Modus „Neutralszene auf Szenen-Gruppenadresse“ ist Szenennummer 1 für Neutral reserviert; reguläre Szenen verwenden 2–64.",
         "data": {
           "mapping_name_1": "Name der Szene 1",
           "scene_entity_id_1": "Entität der Szene 1",
@@ -42,7 +42,7 @@
       },
       "button_neutral": {
         "title": "Neutralszene konfigurieren",
-        "description": "Im Modus „Neutralszene“ wird die KNX-Szenennummer 1 automatisch zugewiesen.",
+        "description": "Im Modus „Neutralszene“ wird die KNX-Szenennummer 1 automatisch zugewiesen. Die erste Betätigung schaltet auf Neutral, eine weitere stellt die letzte reguläre Szene wieder her.",
         "data": {
           "mapping_name_neutral": "Name der Neutralszene",
           "scene_entity_id_neutral": "Entität der Neutralszene"
@@ -52,6 +52,7 @@
     "error": {
       "duplicate_knx_scene_numbers": "Die KNX-Szenennummern müssen innerhalb eines Szenentasters eindeutig sein.",
       "duplicate_group_addresses": "Die Gruppenadressen für Szenenauswahl und Umschalten müssen unterschiedlich sein.",
+      "conflicting_group_address_roles": "Eine Gruppenadresse kann nicht bei einem Szenentaster zur Szenenauswahl und bei einem anderen zum Umschalten verwendet werden.",
       "invalid_configuration": "Die Konfiguration des Szenentasters ist ungültig."
     }
   },
@@ -86,7 +87,7 @@
       },
       "button_scenes": {
         "title": "Reguläre Szenen konfigurieren",
-        "description": "Im Modus „Separate Umschalt-Gruppenadresse“ können reguläre Szenen die KNX-Szenennummern 1–64 verwenden. Im Modus „Neutralszene auf Szenen-Gruppenadresse“ ist Szenennummer 1 für Neutral reserviert; reguläre Szenen verwenden 2–64.",
+        "description": "Es werden vier Szenen vorgeschlagen. Nur Zeilen mit ausgewählter Home-Assistant-Szene werden gespeichert; die übrigen Zeilen bleiben unberücksichtigt. Mindestens eine reguläre Szene ist erforderlich. Im Modus „Separate Umschalt-Gruppenadresse“ sind KNX-Szenennummern 1–64 möglich. Im Modus „Neutralszene auf Szenen-Gruppenadresse“ ist Szenennummer 1 für Neutral reserviert; reguläre Szenen verwenden 2–64.",
         "data": {
           "mapping_name_1": "Name der Szene 1",
           "scene_entity_id_1": "Entität der Szene 1",
@@ -104,7 +105,7 @@
       },
       "button_neutral": {
         "title": "Neutralszene konfigurieren",
-        "description": "Im Modus „Neutralszene“ wird die KNX-Szenennummer 1 automatisch zugewiesen.",
+        "description": "Im Modus „Neutralszene“ wird die KNX-Szenennummer 1 automatisch zugewiesen. Die erste Betätigung schaltet auf Neutral, eine weitere stellt die letzte reguläre Szene wieder her.",
         "data": {
           "mapping_name_neutral": "Name der Neutralszene",
           "scene_entity_id_neutral": "Entität der Neutralszene"
@@ -114,6 +115,7 @@
     "error": {
       "duplicate_knx_scene_numbers": "Die KNX-Szenennummern müssen innerhalb eines Szenentasters eindeutig sein.",
       "duplicate_group_addresses": "Die Gruppenadressen für Szenenauswahl und Umschalten müssen unterschiedlich sein.",
+      "conflicting_group_address_roles": "Eine Gruppenadresse kann nicht bei einem Szenentaster zur Szenenauswahl und bei einem anderen zum Umschalten verwendet werden.",
       "invalid_configuration": "Die Konfiguration des Szenentasters ist ungültig."
     }
   },

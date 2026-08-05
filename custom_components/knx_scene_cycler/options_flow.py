@@ -10,6 +10,7 @@ from homeassistant.data_entry_flow import FlowResult
 from .button_factory import (
     _button_config_to_form_data,
     _create_button_config,
+    _replace_regular_scene_form_data,
 )
 from .const import (
     CONF_BUTTON_ID,
@@ -30,7 +31,7 @@ from .schemas import (
     _regular_scenes_schema,
 )
 from .validation import (
-    _has_duplicate_regular_scene_numbers,
+    _has_cross_button_address_role_conflict,
     _model_error_key,
     _trigger_mode,
 )
@@ -156,7 +157,7 @@ class KnxSceneCyclerOptionsFlowHandler(
         """Configure group addresses for a scene button."""
         if user_input is not None:
             self._button_data.update(user_input)
-            return await self.async_step_button_scenes()
+            return await self.async_step_button_neutral()
 
         return self.async_show_form(
             step_id="button_addresses",
@@ -170,20 +171,71 @@ class KnxSceneCyclerOptionsFlowHandler(
         self,
         user_input: dict[str, Any] | None = None,
     ) -> FlowResult:
-        """Configure regular scenes for a scene button."""
+        """Configure regular scenes and save a scene button."""
         errors: dict[str, str] = {}
         form_defaults = self._button_data
 
         if user_input is not None:
-            if _has_duplicate_regular_scene_numbers(user_input):
-                errors["base"] = "duplicate_knx_scene_numbers"
-                form_defaults = {
-                    **self._button_data,
-                    **user_input,
-                }
+            candidate_data = _replace_regular_scene_form_data(
+                self._button_data,
+                user_input,
+            )
+
+            try:
+                button_config = _create_button_config(
+                    candidate_data,
+                    existing_config=self._existing_button_config,
+                )
+            except ValueError as err:
+                errors["base"] = _model_error_key(err)
+                form_defaults = candidate_data
             else:
-                self._button_data.update(user_input)
-                return await self.async_step_button_neutral()
+                current_buttons = list(
+                    self.config_entry.data.get(CONF_BUTTONS, [])
+                )
+                other_button_configs = [
+                    SceneButtonConfig.from_dict(button)
+                    for button in current_buttons
+                    if button[CONF_BUTTON_ID]
+                    != self._selected_button_id
+                ]
+
+                if _has_cross_button_address_role_conflict(
+                    button_config,
+                    other_button_configs,
+                ):
+                    errors["base"] = (
+                        "conflicting_group_address_roles"
+                    )
+                    form_defaults = candidate_data
+                else:
+                    updated_data = dict(self.config_entry.data)
+
+                    if self._operation == ACTION_EDIT_BUTTON:
+                        updated_data[CONF_BUTTONS] = [
+                            (
+                                button_config.to_dict()
+                                if button[CONF_BUTTON_ID]
+                                == self._selected_button_id
+                                else button
+                            )
+                            for button in current_buttons
+                        ]
+                    else:
+                        updated_data[CONF_BUTTONS] = [
+                            *current_buttons,
+                            button_config.to_dict(),
+                        ]
+
+                    self.hass.config_entries.async_update_entry(
+                        self.config_entry,
+                        data=updated_data,
+                    )
+
+                    return self.async_create_entry(
+                        title="",
+                        data={},
+                    )
 
         return self.async_show_form(
             step_id="button_scenes",
@@ -198,61 +250,15 @@ class KnxSceneCyclerOptionsFlowHandler(
         self,
         user_input: dict[str, Any] | None = None,
     ) -> FlowResult:
-        """Configure the neutral scene and save a scene button."""
-        errors: dict[str, str] = {}
-        form_defaults = self._button_data
-
+        """Configure the neutral scene."""
         if user_input is not None:
-            candidate_data = {
-                **self._button_data,
-                **user_input,
-            }
-
-            try:
-                button_config = _create_button_config(
-                    candidate_data,
-                    existing_config=self._existing_button_config,
-                )
-            except ValueError as err:
-                errors["base"] = _model_error_key(err)
-                form_defaults = candidate_data
-            else:
-                current_buttons = list(
-                    self.config_entry.data.get(CONF_BUTTONS, [])
-                )
-                updated_data = dict(self.config_entry.data)
-
-                if self._operation == ACTION_EDIT_BUTTON:
-                    updated_data[CONF_BUTTONS] = [
-                        (
-                            button_config.to_dict()
-                            if button[CONF_BUTTON_ID]
-                            == self._selected_button_id
-                            else button
-                        )
-                        for button in current_buttons
-                    ]
-                else:
-                    updated_data[CONF_BUTTONS] = [
-                        *current_buttons,
-                        button_config.to_dict(),
-                    ]
-
-                self.hass.config_entries.async_update_entry(
-                    self.config_entry,
-                    data=updated_data,
-                )
-
-                return self.async_create_entry(
-                    title="",
-                    data={},
-                )
+            self._button_data.update(user_input)
+            return await self.async_step_button_scenes()
 
         return self.async_show_form(
             step_id="button_neutral",
             data_schema=_neutral_scene_schema(
                 trigger_mode=_trigger_mode(self._button_data),
-                defaults=form_defaults,
+                defaults=self._button_data,
             ),
-            errors=errors,
         )

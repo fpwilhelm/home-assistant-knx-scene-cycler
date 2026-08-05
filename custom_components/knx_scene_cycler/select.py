@@ -101,6 +101,8 @@ class KnxSceneCyclerSelect(SelectEntity):
             {
                 "address": self._config.scene_selection_address,
                 "payload": mapping.knx_scene_number,
+                "type": "scene_number",
+                "response": False,
             },
             blocking=True,
         )

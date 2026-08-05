@@ -12,6 +12,9 @@ from homeassistant.helpers import device_registry as dr
 
 from .const import CONF_BUTTONS, CONF_HUB_NAME, DOMAIN
 from .hub import KNXSceneCyclerHub
+from .knx_event_manager import (
+    async_get_knx_event_registration_manager,
+)
 from .models import SceneButtonConfig
 
 _LOGGER = logging.getLogger(__name__)
@@ -43,6 +46,8 @@ async def async_setup_entry(
         hass=hass,
         button_configs=button_configs,
     )
+    event_manager = async_get_knx_event_registration_manager(hass)
+    await hub.async_start(event_manager)
 
     device_registry = dr.async_get(hass)
     device_registry.async_get_or_create(

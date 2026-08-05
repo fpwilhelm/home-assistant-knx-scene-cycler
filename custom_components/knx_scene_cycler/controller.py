@@ -12,6 +12,7 @@ from .models import (
     SceneButtonConfig,
     SceneMapping,
     SceneMappingType,
+    TriggerMode,
 )
 from .runtime import SceneButtonRuntime
 
@@ -97,8 +98,12 @@ class SceneButtonController:
     async def handle_knx_scene_number(
         self,
         knx_scene_number: int,
-    ) -> None:
-        """Handle a received KNX scene number."""
+    ) -> bool:
+        """Handle a received KNX scene number.
+
+        Return whether a repeated neutral-scene telegram restored the
+        last regular scene.
+        """
         mapping = self._config.mapping_for_knx_scene_number(
             knx_scene_number
         )
@@ -109,13 +114,35 @@ class SceneButtonController:
                 knx_scene_number,
                 self._config.button_id,
             )
-            return
+            return False
 
         if mapping.mapping_type is SceneMappingType.NEUTRAL:
+            if (
+                self._runtime.current_scene_number
+                == mapping.knx_scene_number
+                and not self._runtime.is_active
+            ):
+                await self.activate_scene_number(
+                    self._runtime.last_regular_scene_number
+                )
+                return True
+
             await self.activate_neutral()
-            return
+            return False
+
+        if (
+            self._config.trigger_mode is TriggerMode.NEUTRAL_SCENE
+            and not self._runtime.is_active
+            and self._runtime.current_scene_number
+            == self._config.neutral_mapping.knx_scene_number
+        ):
+            await self.activate_scene_number(
+                self._runtime.last_regular_scene_number
+            )
+            return True
 
         await self.activate_scene_number(knx_scene_number)
+        return False
 
     async def shutdown(self) -> None:
         """Release controller resources."""

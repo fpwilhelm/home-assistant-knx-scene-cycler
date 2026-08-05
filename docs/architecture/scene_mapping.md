@@ -65,6 +65,14 @@ Represents a normal selectable scene.
 
 Regular mappings are activated directly through KNX scene numbers and can become the current active scene.
 
+A Scene Button stores between one and four regular mappings. The Config Flow
+shows four suggested rows, but rows without a selected Home Assistant scene
+are not persisted and have no runtime state.
+
+Multiple mappings may reference the same Home Assistant scene entity. Their
+KNX scene numbers must still be unique within the Scene Button so that every
+incoming telegram resolves to exactly one mapping.
+
 ---
 
 ## Neutral Mapping

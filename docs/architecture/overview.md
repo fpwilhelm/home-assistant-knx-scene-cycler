@@ -5,6 +5,7 @@ Related documents:
 - Architecture Overview
 - Scene Mapping
 - Controller
+- KNX Event Registration
 
 # Architecture Overview
 
@@ -37,6 +38,9 @@ The architecture was designed around the following principles:
                 Home Assistant
                        │
                Config Entry
+                       │
+                       ▼
+        KNX Event Registration Manager
                        │
                        ▼
              KNXSceneCyclerHub
@@ -75,7 +79,15 @@ Creates and validates the user configuration.
 
 The central integration component.
 
-It owns all configured scene buttons and coordinates their lifecycle.
+It owns all configured scene buttons, routes incoming KNX events and
+coordinates their lifecycle.
+
+---
+
+### KNX Event Registration Manager
+
+Registers configured input group addresses with the Home Assistant KNX
+integration and reference-counts addresses shared by multiple Config Entries.
 
 ---
 
@@ -142,3 +154,4 @@ The modular architecture allows future extensions including:
 - Runtime
 - Controller
 - Trigger Modes
+- KNX Event Registration

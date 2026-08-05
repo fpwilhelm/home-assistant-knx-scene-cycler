@@ -42,45 +42,62 @@ def _create_button_config(
         if existing_config is not None
         else ()
     )
+    used_mapping_ids = {
+        mapping.mapping_id for mapping in existing_regular_mappings
+    }
 
-    mappings = [
-        SceneMapping(
-            mapping_id=(
-                existing_regular_mappings[
-                    mapping_number - 1
-                ].mapping_id
-                if mapping_number <= len(existing_regular_mappings)
-                else f"regular_{mapping_number}"
-            ),
-            name=str(
-                user_input[
-                    _mapping_name_key(mapping_number)
-                ]
-            ).strip(),
-            mapping_type=SceneMappingType.REGULAR,
-            knx_scene_number=int(
-                user_input[
-                    _knx_scene_number_key(mapping_number)
-                ]
-            ),
-            scene_entity_id=str(
-                user_input[
-                    _scene_entity_key(mapping_number)
-                ]
-            ).strip(),
-            led_color_value=(
-                existing_regular_mappings[
-                    mapping_number - 1
-                ].led_color_value
-                if mapping_number <= len(existing_regular_mappings)
-                else None
-            ),
+    mappings: list[SceneMapping] = []
+
+    for mapping_number in range(
+        1,
+        _REGULAR_MAPPING_COUNT + 1,
+    ):
+        scene_entity_id = _optional_string(
+            user_input.get(_scene_entity_key(mapping_number))
         )
-        for mapping_number in range(
-            1,
-            _REGULAR_MAPPING_COUNT + 1,
+        if scene_entity_id is None:
+            continue
+
+        mapping_name = str(
+            user_input.get(_mapping_name_key(mapping_number), "")
+        ).strip()
+        raw_scene_number = user_input.get(
+            _knx_scene_number_key(mapping_number)
         )
-    ]
+        if not mapping_name or raw_scene_number in (None, ""):
+            raise ValueError(
+                "Every enabled regular scene requires a name and "
+                "a KNX scene number."
+            )
+
+        existing_mapping = (
+            existing_regular_mappings[mapping_number - 1]
+            if mapping_number <= len(existing_regular_mappings)
+            else None
+        )
+        mapping_id = (
+            existing_mapping.mapping_id
+            if existing_mapping is not None
+            else _new_regular_mapping_id(
+                preferred_number=mapping_number,
+                used_mapping_ids=used_mapping_ids,
+            )
+        )
+        used_mapping_ids.add(mapping_id)
+        mappings.append(
+            SceneMapping(
+                mapping_id=mapping_id,
+                name=mapping_name,
+                mapping_type=SceneMappingType.REGULAR,
+                knx_scene_number=int(raw_scene_number),
+                scene_entity_id=scene_entity_id,
+                led_color_value=(
+                    existing_mapping.led_color_value
+                    if existing_mapping is not None
+                    else None
+                ),
+            )
+        )
 
     neutral_knx_scene_number: int | None = None
     if trigger_mode is TriggerMode.NEUTRAL_SCENE:
@@ -168,3 +185,41 @@ def _button_config_to_form_data(
     )
 
     return form_data
+
+
+def _replace_regular_scene_form_data(
+    base_data: dict[str, Any],
+    user_input: dict[str, Any],
+) -> dict[str, Any]:
+    """Replace all regular-scene form values in accumulated flow data.
+
+    Home Assistant omits cleared optional selector fields from user input.
+    Removing every value owned by this form step first prevents a cleared
+    scene entity from being restored from the previous form defaults.
+    """
+    updated_data = dict(base_data)
+
+    for mapping_number in range(
+        1,
+        _REGULAR_MAPPING_COUNT + 1,
+    ):
+        updated_data.pop(_mapping_name_key(mapping_number), None)
+        updated_data.pop(_scene_entity_key(mapping_number), None)
+        updated_data.pop(_knx_scene_number_key(mapping_number), None)
+
+    updated_data.update(user_input)
+    return updated_data
+
+
+def _new_regular_mapping_id(
+    *,
+    preferred_number: int,
+    used_mapping_ids: set[str],
+) -> str:
+    """Return an unused stable ID for a new regular mapping."""
+    candidate_number = preferred_number
+
+    while f"regular_{candidate_number}" in used_mapping_ids:
+        candidate_number += 1
+
+    return f"regular_{candidate_number}"

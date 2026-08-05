@@ -57,9 +57,34 @@ user.
 KNX scene number 1 is reserved for the Neutral Mapping in this mode. Regular
 Scene Mappings therefore use scene numbers 2 through 64.
 
-When activated, the currently active regular Scene Mapping is preserved by the Runtime and can later be restored.
+Scene number 1 acts as a toggle:
 
-The neutral scene therefore behaves as a temporary operating state rather than a regular selectable scene.
+- If a regular scene is active, scene number 1 activates the Neutral Mapping.
+- If the Neutral Mapping is already active, scene number 1 restores the last
+  active regular Scene Mapping.
+- If no event has established the Runtime state after startup, the first scene
+  number 1 telegram activates the Neutral Mapping.
+
+While the Neutral Mapping is active, the first received regular scene telegram
+also restores the last active regular Scene Mapping instead of activating the
+received mapping. This makes a short physical button press behave like
+"resume": it returns from neutral to the previous scene. The integration then
+sends the restored KNX scene number as feedback so that a compatible physical
+button continues its cycle after that scene.
+
+The currently active regular Scene Mapping is preserved by the Runtime while
+neutral is active.
+
+After restoring the last regular scene, the integration sends that scene
+number to the configured scene selection group address. Physical KNX buttons
+with a status object on that address can use the feedback to synchronize their
+internal scene cycle.
+
+The integration ignores its own outgoing feedback event. Only incoming
+GroupValueWrite telegrams are interpreted as physical button input.
+
+The Neutral Mapping therefore behaves as a temporary toggle state rather than
+a regular selectable scene.
 
 ---
 

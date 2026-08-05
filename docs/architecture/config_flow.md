@@ -51,8 +51,8 @@ The user configures one scene button by defining:
 - Scene selection group address
 - Toggle group address
 - Optional status LED group address
-- Regular Scene Mappings
 - Neutral Scene Mapping
+- Between one and four Regular Scene Mappings
 
 The resulting configuration is stored as persistent Home Assistant Config Entry data.
 
@@ -64,13 +64,23 @@ Before the configuration is stored, the Config Flow validates:
 
 - KNX group address format
 - Home Assistant scene entities
-- Unique KNX scene numbers
 - Required configuration values
 
 KNX scene numbers are entered as integer values and are restricted to the
 supported range from 1 through 64.
 
 Invalid configurations are rejected before becoming part of the persistent configuration.
+
+The form proposes four regular mapping rows. Only rows with a selected Home
+Assistant scene entity are stored. Unused rows are omitted from the persistent
+configuration and therefore do not participate in scene selection or
+last-scene restoration. At least one regular mapping is required.
+
+Using the same Home Assistant scene entity in more than one mapping is valid.
+KNX scene numbers must remain unique within one Scene Button because identical
+KNX telegrams do not identify which repeated mapping position was intended.
+This also keeps per-mapping runtime state and future LED color feedback
+deterministic after restarts or missed telegrams.
 
 ---
 
@@ -143,8 +153,8 @@ Manage Scene Buttons
                 │
                 ├── Trigger Mode
                 ├── Group Addresses
-                ├── Regular Scene Mappings
                 ├── Neutral Scene Mapping
+                ├── Regular Scene Mappings
                 └── Save
 ```
 

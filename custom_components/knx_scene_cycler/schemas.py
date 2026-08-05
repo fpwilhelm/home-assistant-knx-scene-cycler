@@ -20,10 +20,10 @@ from .const import (
     CONF_STATUS_LED_ADDRESS,
     CONF_TOGGLE_ADDRESS,
     CONF_TRIGGER_MODE,
+    DEFAULT_REGULAR_SCENE_MAPPING_SLOTS,
     DEFAULT_NEUTRAL_KNX_SCENE_NUMBER,
     MAX_KNX_SCENE_NUMBER,
     MIN_KNX_SCENE_NUMBER,
-    MIN_REGULAR_SCENE_MAPPINGS,
 )
 from .models import TriggerMode
 
@@ -36,7 +36,7 @@ DEFAULT_BUTTON_NAME = "Scene Button"
 
 CONF_ACTION = "action"
 
-_REGULAR_MAPPING_COUNT = MIN_REGULAR_SCENE_MAPPINGS
+_REGULAR_MAPPING_COUNT = DEFAULT_REGULAR_SCENE_MAPPING_SLOTS
 
 
 def _hub_schema() -> vol.Schema:
@@ -173,6 +173,9 @@ def _regular_scenes_schema(
         1,
         _REGULAR_MAPPING_COUNT + 1,
     ):
+        scene_entity_key = _scene_entity_key(mapping_number)
+        suggested_scene_entity = form_defaults.get(scene_entity_key)
+
         schema[
             vol.Required(
                 _mapping_name_key(mapping_number),
@@ -183,16 +186,19 @@ def _regular_scenes_schema(
             )
         ] = str
         schema[
-            vol.Required(
-                _scene_entity_key(mapping_number),
-                default=form_defaults.get(
-                    _scene_entity_key(mapping_number),
-                    vol.UNDEFINED,
+            vol.Optional(
+                scene_entity_key,
+                description=(
+                    {
+                        "suggested_value": suggested_scene_entity,
+                    }
+                    if suggested_scene_entity not in (None, "")
+                    else None
                 ),
             )
         ] = scene_selector
         schema[
-            vol.Required(
+            vol.Optional(
                 _knx_scene_number_key(mapping_number),
                 default=form_defaults.get(
                     _knx_scene_number_key(mapping_number),

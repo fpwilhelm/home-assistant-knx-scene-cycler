@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from .const import CONF_TRIGGER_MODE
-from .models import TriggerMode
+from .models import SceneButtonConfig, TriggerMode
 from .schemas import (
     _REGULAR_MAPPING_COUNT,
     _knx_scene_number_key,
@@ -42,6 +42,30 @@ def _model_error_key(error: ValueError) -> str:
         return "duplicate_group_addresses"
 
     return "invalid_configuration"
+
+
+def _has_cross_button_address_role_conflict(
+    candidate: SceneButtonConfig,
+    existing_buttons: list[SceneButtonConfig],
+) -> bool:
+    """Return whether one GA has conflicting input roles."""
+    existing_scene_addresses = {
+        button.scene_selection_address
+        for button in existing_buttons
+    }
+    existing_toggle_addresses = {
+        button.toggle_address
+        for button in existing_buttons
+        if button.toggle_address is not None
+    }
+
+    if candidate.scene_selection_address in existing_toggle_addresses:
+        return True
+
+    return (
+        candidate.toggle_address is not None
+        and candidate.toggle_address in existing_scene_addresses
+    )
 
 
 def _optional_string(value: Any) -> str | None:
